@@ -91,6 +91,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/update/{invoice}', [InvoiceController::class, 'update'])->name('update');
         Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/print', [InvoiceController::class, 'print'])->name('print');
+        Route::match(['get', 'post'], '/combine-form', [InvoiceController::class, 'combineForm'])->name('combine_form');
+        Route::post('/store-combined', [InvoiceController::class, 'storeCombined'])->name('store_combined');
     });
 
     // --- BAST (Berita Acara Serah Terima) ---

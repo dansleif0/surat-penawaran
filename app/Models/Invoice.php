@@ -24,4 +24,9 @@ class Invoice extends Model
     public function payments() {
         return $this->hasMany(InvoicePayment::class);
     }
+
+    // Relasi ke Item Invoice Merged (Piutang Statement)
+    public function mergedItems() {
+        return $this->hasMany(InvoiceMergedItem::class, 'merged_invoice_id')->orderBy('date', 'asc');
+    }
 }
