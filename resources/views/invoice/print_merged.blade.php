@@ -9,11 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* RESET STANDAR UNTUK PRINT */
+        /* RESET STANDAR UNTUK PRINT MARGIN NARROW */
         @media print {
             @page {
                 size: A4;
-                margin: 0;
+                margin: 12.7mm;
             }
 
             body {
@@ -31,7 +31,7 @@
             #main-container {
                 width: 210mm;
                 margin: 0 auto !important;
-                padding: 15mm 20mm !important;
+                padding: 10mm 12.7mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 float: none !important;

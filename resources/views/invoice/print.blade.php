@@ -9,12 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* 1. RESET STANDAR UNTUK PRINT */
+        /* 1. RESET STANDAR UNTUK PRINT MARGIN NARROW */
         @media print {
             @page {
                 size: A4;
-                margin: 0;
-                /* Margin nol agar kita kontrol penuh lewat CSS */
+                margin: 12.7mm;
             }
 
             body {
@@ -29,13 +28,11 @@
                 display: none !important;
             }
 
-            /* KONTROL PRESISI A4 */
+            /* KONTROL PRESISI A4 MARGIN NARROW */
             #main-container {
                 width: 210mm;
-                /* Jangan gunakan min-height: 297mm agar jika konten sedikit tidak memaksa 2 halaman */
                 margin: 0 auto !important;
-                padding: 15mm 20mm !important;
-                /* Margin konten standar surat */
+                padding: 10mm 12.7mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 float: none !important;

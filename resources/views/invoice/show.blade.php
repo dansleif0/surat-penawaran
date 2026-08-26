@@ -154,6 +154,11 @@
             visibility: visible;
         }
 
+        @page {
+            size: A4;
+            margin: 12.7mm;
+        }
+
         #invoice-print-area {
             position: absolute;
             left: 0;
@@ -162,7 +167,7 @@
             box-shadow: none;
             border: none;
             margin: 0;
-            padding: 0.5in;
+            padding: 12.7mm !important;
             font-size: 10pt;
         }
 

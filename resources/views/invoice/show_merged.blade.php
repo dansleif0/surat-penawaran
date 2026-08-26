@@ -130,4 +130,34 @@
 
     </div>
 </div>
+
+<style>
+    @media print {
+        @page {
+            size: A4;
+            margin: 12.7mm;
+        }
+
+        .print\:hidden, nav, header.bg-white.shadow-sm, aside {
+            display: none !important;
+        }
+
+        body {
+            background-color: white !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        #statement-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 12.7mm !important;
+        }
+    }
+</style>
 @endsection

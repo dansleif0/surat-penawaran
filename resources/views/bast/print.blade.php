@@ -13,8 +13,7 @@
         @media print {
             @page {
                 size: A4;
-                margin: 2.5cm;
-                /* Margin surat resmi biasanya agak lebar */
+                margin: 12.7mm;
             }
 
             body {

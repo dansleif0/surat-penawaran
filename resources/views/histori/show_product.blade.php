@@ -196,11 +196,11 @@
 
 <style>
     @media print {
-        @page { margin: 0; size: A4; }
+        @page { margin: 12.7mm; size: A4; }
         body * { visibility: hidden; }
         #surat-penawaran, #surat-penawaran * { visibility: visible; }
         #surat-penawaran {
-            position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 1cm;
+            position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 12.7mm !important;
             box-shadow: none !important; border: none !important; background-color: white !important;
         }
         .print-bg-black { background-color: #1f2937 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

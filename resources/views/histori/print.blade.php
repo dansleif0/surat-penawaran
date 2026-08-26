@@ -9,12 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* CSS KHUSUS PRINT A4 */
+        /* CSS KHUSUS PRINT A4 - MARGIN NARROW */
         @media print {
             @page {
                 size: A4;
-                margin: 0;
-                /* Margin dikontrol via padding di container agar presisi */
+                margin: 12.7mm;
             }
 
             body {
@@ -29,12 +28,11 @@
                 display: none !important;
             }
 
-            /* Paksa Kontainer mengikuti ukuran A4 Murni */
+            /* Paksa Kontainer mengikuti ukuran A4 Murni dengan Margin Narrow */
             #print-paper {
                 width: 210mm;
                 min-height: 297mm;
-                padding: 15mm 20mm !important;
-                /* Standar margin surat resmi */
+                padding: 10mm 12.7mm !important;
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 border: none !important;

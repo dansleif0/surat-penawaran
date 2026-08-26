@@ -369,8 +369,7 @@
     @media print {
         @page {
             size: A4;
-            margin: 1.5cm;
-            /* Margin yang cukup */
+            margin: 12.7mm;
         }
 
         /* Hilangkan elemen yang tidak perlu */
