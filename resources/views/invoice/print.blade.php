@@ -169,7 +169,7 @@
                 <tbody>
                     <tr>
                         <td class="border border-black p-2 text-center">1</td>
-                        <td class="border border-black p-2">Total Pengecatan (sesuai Penawaran)</td>
+                        <td class="border border-black p-2">Total Tagihan (sesuai Penawaran)</td>
                         <td class="border border-black p-2 text-right">Rp {{ number_format($invoice->total_penawaran, 0, ',', '.') }}</td>
                     </tr>
 
