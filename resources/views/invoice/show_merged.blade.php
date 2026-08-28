@@ -10,6 +10,9 @@
         <a href="{{ route('invoice.print', $invoice->id) }}" target="_blank" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded hover:bg-indigo-700 transition shadow-sm inline-flex items-center gap-2">
             🖨️ Print Piutang Statement (PDF)
         </a>
+        <a href="{{ route('invoice.print_surat_jalan', $invoice->id) }}" target="_blank" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded hover:bg-emerald-700 transition shadow-sm inline-flex items-center gap-2">
+            🚚 Print Surat Jalan
+        </a>
     </div>
 
     <div class="max-w-4xl mx-auto bg-white p-8 md:p-12 shadow-lg rounded-lg border border-gray-200" id="statement-print-area">

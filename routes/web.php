@@ -91,6 +91,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/update/{invoice}', [InvoiceController::class, 'update'])->name('update');
         Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/print', [InvoiceController::class, 'print'])->name('print');
+        Route::get('/{id}/print-surat-jalan', [InvoiceController::class, 'printSuratJalan'])->name('print_surat_jalan');
         Route::match(['get', 'post'], '/combine-form', [InvoiceController::class, 'combineForm'])->name('combine_form');
         Route::post('/store-combined', [InvoiceController::class, 'storeCombined'])->name('store_combined');
     });

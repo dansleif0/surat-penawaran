@@ -61,13 +61,20 @@ class InvoiceController extends Controller
 
     public function print($id)
     {
-        $invoice = \App\Models\Invoice::with(['offer', 'additions', 'payments', 'mergedItems'])->findOrFail($id);
+        $invoice = \App\Models\Invoice::with(['offer.items', 'offer.jasaItems', 'additions', 'payments', 'mergedItems'])->findOrFail($id);
 
         if ($invoice->status === 'merge') {
             return view('invoice.print_merged', compact('invoice'));
         }
 
         return view('invoice.print', compact('invoice'));
+    }
+
+    public function printSuratJalan($id)
+    {
+        $invoice = \App\Models\Invoice::with(['offer.items', 'offer.jasaItems', 'additions', 'payments', 'mergedItems'])->findOrFail($id);
+
+        return view('invoice.print_surat_jalan', compact('invoice'));
     }
 
     public function storeFromOffer(Request $request)
