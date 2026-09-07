@@ -254,6 +254,9 @@
                                         $subHarga = $hargaSatuan * $qty;
                                         $discVal = 0;
                                         $totalBaris = $subHarga - $discVal;
+                                        $strUkuran = str_replace(',', '.', $item->area_dinding);
+                                        $ukuranVal = (float) filter_var($strUkuran, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                                        $satuanCetak = $ukuranVal > 5 ? 'PAIL' : 'CAN';
                                     @endphp
                                     <tr class="align-top font-sans">
                                         <td class="py-0.5 px-1 text-center font-medium">{{ $invRowNo++ }}.</td>
@@ -266,7 +269,7 @@
                                             </div>
                                         </td>
                                         <td class="py-0.5 px-1 text-center whitespace-nowrap font-medium">
-                                            {{ $qty + 0 }} {{ $item->satuan ?? 'CAN' }}
+                                            {{ $qty + 0 }} {{ $satuanCetak }}
                                         </td>
                                         <td class="py-0.5 px-1 text-center"></td>
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap">
@@ -471,6 +474,11 @@
 
                             @if($invoice->offer && $invoice->offer->items && $invoice->offer->items->count() > 0)
                                 @foreach($invoice->offer->items as $item)
+                                    @php
+                                        $strUkuran = str_replace(',', '.', $item->area_dinding);
+                                        $ukuranVal = (float) filter_var($strUkuran, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                                        $satuanCetak = $ukuranVal > 5 ? 'PAIL' : 'CAN';
+                                    @endphp
                                     <tr class="align-top font-sans">
                                         <td class="py-0.5 px-1 text-center font-medium">{{ $sjRowNo++ }}.</td>
                                         <td class="py-0.5 px-2 font-medium italic">
@@ -482,7 +490,7 @@
                                             </div>
                                         </td>
                                         <td class="py-0.5 px-2 text-center whitespace-nowrap font-medium">
-                                            {{ $item->volume + 0 }} {{ $item->satuan ?? 'CAN' }}
+                                            {{ $item->volume + 0 }} {{ $satuanCetak }}
                                         </td>
                                         <td class="py-0.5 px-2 text-center"></td>
                                         <td class="py-0.5 px-2 leading-tight">
