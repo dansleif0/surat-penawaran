@@ -40,6 +40,13 @@ class RecapController extends Controller
         return view('recap.show', compact('recap'));
     }
 
+    public function print($id)
+    {
+        $recap = Recap::with(['items', 'offer'])->findOrFail($id);
+
+        return view('recap.print', compact('recap'));
+    }
+
     // Tambahkan di dalam RecapController
 
     public function exportExcel($id)
@@ -96,9 +103,10 @@ class RecapController extends Controller
         foreach ($request->items as $item) {
             if (!empty($item['material'])) {
                 $recap->items()->create([
-                    'tanggal_item' => $item['tanggal_item'] ?? null, // PERBAIKAN: Pastikan ini ada
+                    'tanggal_item' => $item['tanggal_item'] ?? null,
                     'material'     => $item['material'],
-                    'detail'       => $item['detail'],
+                    'kategori'     => $item['kategori'] ?? null,
+                    'detail'       => $item['detail'] ?? null,
                     'harga'        => $item['harga'] ?? 0,
                     'qty'          => $item['qty'] ?? 0,
                     'subtotal'     => ($item['harga'] ?? 0) * ($item['qty'] ?? 0),
@@ -140,7 +148,8 @@ class RecapController extends Controller
                     $recap->items()->create([
                         'tanggal_item' => $item['tanggal_item'] ?? null,
                         'material'     => $item['material'],
-                        'detail'       => $item['detail'],
+                        'kategori'     => $item['kategori'] ?? null,
+                        'detail'       => $item['detail'] ?? null,
                         'harga'        => $item['harga'] ?? 0,
                         'qty'          => $item['qty'] ?? 1,
                         'subtotal'     => ($item['harga'] ?? 0) * ($item['qty'] ?? 1),

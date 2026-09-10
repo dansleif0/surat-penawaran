@@ -111,6 +111,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/recap/store', [RecapController::class, 'store'])->name('recap.store');
     Route::get('/recap/history', [RecapController::class, 'index'])->name('recap.index');
     Route::get('/recap/show/{id}', [RecapController::class, 'show'])->name('recap.show');
+    Route::get('/recap/print/{id}', [RecapController::class, 'print'])->name('recap.print');
     Route::delete('/recap/delete/{id}', [RecapController::class, 'destroy'])->name('recap.destroy');
     // Route untuk Edit & Update
     Route::get('/recap/{id}/edit', [RecapController::class, 'edit'])->name('recap.edit');
