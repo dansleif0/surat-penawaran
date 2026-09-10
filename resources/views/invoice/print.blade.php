@@ -158,7 +158,7 @@
 
         <section class="mt-8 text-sm">
             <p class="mb-2">Bersama ini kami sampaikan tagihan untuk:</p>
-            <p><span class="font-medium w-20 inline-block">Project</span>: Pengecatan dan Supply Cat Jotun Paints</p>
+            <p><span class="font-medium w-20 inline-block">Project</span>: {{ optional($invoice->offer)->perihal ?? 'Pengecatan dan Supply Cat Jotun Paints' }}</p>
             @if($invoice->purchaseOrder && $invoice->purchaseOrder->alamat_detail)
             <p><span class="font-medium w-20 inline-block">Alamat</span>: {{ $invoice->purchaseOrder->alamat_detail }}</p>
             @elseif($invoice->offer && $invoice->offer->client_details)
@@ -176,7 +176,7 @@
                 <tbody>
                     <tr>
                         <td class="border border-black p-2 text-center">1</td>
-                        <td class="border border-black p-2">Total Pengecatan (sesuai Penawaran)</td>
+                        <td class="border border-black p-2">Total Tagihan (sesuai Penawaran)</td>
                         <td class="border border-black p-2 text-right">Rp {{ number_format($invoice->total_penawaran, 0, ',', '.') }}</td>
                     </tr>
 
@@ -212,27 +212,10 @@
                     </tr>
 
                     @foreach($invoice->payments as $payment)
-                    @if($payment->status_verifikasi === 'verified')
                     <tr class="font-medium text-gray-600">
-                        <td colspan="2" class="border border-black p-2 text-right">
-                            <div class="flex flex-col items-end">
-                                <span>{{ $payment->keterangan }}</span>
-                                @if($payment->bukti_transfer)
-                                @php
-                                    $urlBukti = str_starts_with($payment->bukti_transfer, 'bukti_transfer/') ? asset($payment->bukti_transfer) : asset('storage/' . $payment->bukti_transfer);
-                                @endphp
-                                <a href="{{ $urlBukti }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 no-print">
-                                    📸 Lihat Bukti Transfer
-                                </a>
-                                <span class="hidden print:inline text-[10px] text-gray-500 mt-0.5 font-normal">
-                                    (Bukti transfer telah dilampirkan)
-                                </span>
-                                @endif
-                            </div>
-                        </td>
+                        <td colspan="2" class="border border-black p-2 text-right">{{ $payment->keterangan }}</td>
                         <td class="border border-black p-2 text-right text-green-600">- Rp {{ number_format($payment->jumlah, 0, ',', '.') }}</td>
                     </tr>
-                    @endif
                     @endforeach
 
                     <tr class="font-bold text-xl bg-gray-200">
@@ -246,7 +229,7 @@
         <section class="mt-12 flex justify-between text-sm">
             <div class="text-center">
                 <p>Hormat kami,</p>
-                <p>CV. Daedan Enterprise</p>
+                <p>PT. Tasniem Gerai Inspirasi</p>
                 <div class="h-28 w-48 relative">
                     <img src="{{ asset('images/ttd.png') }}" alt="Logo & Tanda Tangan" class="h-28 opacity-100 mx-auto">
                 </div>
@@ -255,7 +238,7 @@
             </div>
             <div class="text-left">
                 <p class="font-medium">Pembayaran melalui Bank:</p>
-                <p>a/n CV. Daedan Enterprise</p>
+                <p>a/n PT. Tasniem Gerai Inspirasi</p>
                 <p>Bank BRI Cab. Nagoya</p>
                 <p>Rek. No. 0331 - 0100 1817 306</p>
             </div>
