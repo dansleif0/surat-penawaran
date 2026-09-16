@@ -146,14 +146,15 @@
                         <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Satuan</label>
                             <select name="jasa[{{$index}}][satuan]" class="jasa-satuan w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
-                                <option value="Ls" {{ ($jasa->satuan ?? '') == 'Ls' ? 'selected' : '' }}>Ls (Lumpsum)</option>
-                                <option value="Lot" {{ ($jasa->satuan ?? '') == 'Lot' ? 'selected' : '' }}>Lot</option>
-                                <option value="M2" {{ ($jasa->satuan ?? '') == 'M2' ? 'selected' : '' }}>M²</option>
-                                <option value="M1" {{ ($jasa->satuan ?? '') == 'M1' ? 'selected' : '' }}>M¹</option>
-                                <option value="Unit" {{ ($jasa->satuan ?? '') == 'Unit' ? 'selected' : '' }}>Unit</option>
-                                <option value="Pkt" {{ ($jasa->satuan ?? '') == 'Pkt' ? 'selected' : '' }}>Pkt (Paket)</option>
-                                <option value="Liter" {{ ($jasa->satuan ?? '') == 'Liter' ? 'selected' : '' }}>Liter</option>
-                                <option value="Titik" {{ ($jasa->satuan ?? '') == 'Titik' ? 'selected' : '' }}>Titik</option>
+                                <option value="Ls" {{ in_array(($jasa->satuan ?? ''), ['Ls', 'LS', 'ls']) ? 'selected' : '' }}>Ls (Lumpsum)</option>
+                                <option value="Lot" {{ in_array(($jasa->satuan ?? ''), ['Lot', 'LOT', 'lot']) ? 'selected' : '' }}>Lot</option>
+                                <option value="m²" {{ in_array(($jasa->satuan ?? ''), ['m²', 'M2', 'm2', 'M²']) ? 'selected' : '' }}>m²</option>
+                                <option value="m¹" {{ in_array(($jasa->satuan ?? ''), ['m¹', 'M1', 'm1', 'M¹']) ? 'selected' : '' }}>m¹</option>
+                                <option value="m³" {{ in_array(($jasa->satuan ?? ''), ['m³', 'M3', 'm3', 'M³']) ? 'selected' : '' }}>m³</option>
+                                <option value="Unit" {{ in_array(($jasa->satuan ?? ''), ['Unit', 'UNIT', 'unit']) ? 'selected' : '' }}>Unit</option>
+                                <option value="Pkt" {{ in_array(($jasa->satuan ?? ''), ['Pkt', 'PKT', 'pkt']) ? 'selected' : '' }}>Pkt (Paket)</option>
+                                <option value="Liter" {{ in_array(($jasa->satuan ?? ''), ['Liter', 'LITER', 'liter']) ? 'selected' : '' }}>Liter</option>
+                                <option value="Titik" {{ in_array(($jasa->satuan ?? ''), ['Titik', 'TITIK', 'titik']) ? 'selected' : '' }}>Titik</option>
                             </select>
                         </div>
 
@@ -298,8 +299,9 @@
             <select class="jasa-satuan w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                 <option value="Ls">Ls (Lumpsum)</option>
                 <option value="Lot">Lot</option>
-                <option value="M2">M²</option>
-                <option value="M1">M¹</option>
+                <option value="m²">m²</option>
+                <option value="m¹">m¹</option>
+                <option value="m³">m³</option>
                 <option value="Unit">Unit</option>
                 <option value="Pkt">Pkt (Paket)</option>
                 <option value="Liter">Liter</option>

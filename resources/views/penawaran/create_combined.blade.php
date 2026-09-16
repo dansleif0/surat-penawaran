@@ -218,8 +218,9 @@
             <select class="jasa-satuan w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                 <option value="Ls">Ls (Lumpsum)</option>
                 <option value="Lot">Lot</option>
-                <option value="M2">M²</option>
-                <option value="M1">M¹</option>
+                <option value="m²">m²</option>
+                <option value="m¹">m¹</option>
+                <option value="m³">m³</option>
                 <option value="Unit">Unit</option>
                 <option value="Pkt">Pkt (Paket)</option>
                 <option value="Liter">Liter</option>

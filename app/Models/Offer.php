@@ -31,12 +31,23 @@ class Offer extends Model
         'total_keseluruhan',
     ];
 
-    public function items()
-{
-    return $this->hasMany(OfferItem::class);
-}
+    public function getSatuanAttribute($value)
+    {
+        return OfferJasa::formatSatuanValue($value);
+    }
 
-public function jasaItems() {
-    return $this->hasMany(OfferJasa::class);
-}
+    public function setSatuanAttribute($value)
+    {
+        $this->attributes['satuan'] = OfferJasa::formatSatuanValue($value);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(OfferItem::class);
+    }
+
+    public function jasaItems()
+    {
+        return $this->hasMany(OfferJasa::class);
+    }
 }
