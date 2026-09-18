@@ -99,7 +99,13 @@
                         </div>
 
                         {{-- 6. Hapus --}}
-                        <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end">
+                        <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end items-center gap-2">
+                            <button type="button" class="insert-row-btn bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-blue-200 shadow-sm active:scale-95" title="Sisip Baris Produk di Bawah Ini">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>+ Sisip Baris</span>
+                            </button>
                             <button type="button" class="remove-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors" title="Hapus Baris">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -159,10 +165,8 @@
                         </div>
 
                         {{-- 4. Harga Satuan --}}
-                        {{-- Note: Jika kolom 'harga_satuan' belum ada di DB, Anda mungkin perlu migrasi. Jika tidak, gunakan 'harga_jasa' tapi logikanya harus disesuaikan --}}
                         <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga Satuan</label>
-                            {{-- Jika di DB Anda kolomnya 'harga_jasa' menyimpan total, maka disini harus dibagi volume. Jika ada kolom 'harga_satuan', pakai itu --}}
                             <input type="number" name="jasa[{{$index}}][harga]" value="{{ $jasa->harga_satuan ?? $jasa->harga_jasa }}" class="jasa-harga w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                         </div>
 
@@ -172,9 +176,15 @@
                             <input type="text" class="jasa-total w-full bg-gray-200 border-gray-300 rounded-md text-sm font-bold text-gray-700 cursor-not-allowed" readonly>
                         </div>
 
-                        {{-- 6. Hapus --}}
-                        <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end">
-                            <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors">
+                        {{-- 6. Hapus & Sisip --}}
+                        <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end items-center gap-1">
+                            <button type="button" class="insert-jasa-row-btn bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-800 px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-green-200 shadow-sm active:scale-95" title="Sisip Baris Jasa di Bawah Ini">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>+ Sisip</span>
+                            </button>
+                            <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus Baris">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                 </svg>
@@ -271,7 +281,13 @@
             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Subtotal</label>
             <input type="text" class="total-output w-full bg-gray-200 border-gray-300 rounded-md text-sm font-bold text-gray-700 cursor-not-allowed" readonly>
         </div>
-        <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end">
+        <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end items-center gap-2">
+             <button type="button" class="insert-row-btn bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-blue-200 shadow-sm active:scale-95" title="Sisip Baris Produk di Bawah Ini">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>+ Sisip Baris</span>
+            </button>
              <button type="button" class="remove-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors" title="Hapus Baris">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -319,8 +335,14 @@
             <input type="text" class="jasa-total w-full bg-gray-200 border-gray-300 rounded-md text-sm font-bold text-gray-700 cursor-not-allowed" readonly>
         </div>
 
-        <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end">
-            <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors">
+        <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end items-center gap-1">
+            <button type="button" class="insert-jasa-row-btn bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-800 px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-green-200 shadow-sm active:scale-95" title="Sisip Baris Jasa di Bawah Ini">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>+ Sisip</span>
+            </button>
+            <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus Baris">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
@@ -337,7 +359,6 @@
 
         const totalKeseluruhanDisplay = document.getElementById('total_keseluruhan');
 
-        // Perbaikan Syntax Blade di JS
         let productRowIndex = {{ $offer->items->count() }};
         let jasaRowIndex = {{ $offer->jasaItems->count() }};
 
@@ -384,22 +405,19 @@
         const addProductRowBtn = document.getElementById('add-product-row-btn');
         const productTemplate = document.getElementById('product-row-template');
 
-        // Fungsi Helper untuk Init Event pada Row yang Sudah Ada
         function setupProductRowEvents(row) {
             const productSelect = row.querySelector('.product-select');
             const hargaInput = row.querySelector('.harga-input');
             const volumeInput = row.querySelector('.volume-input');
             const removeBtn = row.querySelector('.remove-row-btn');
+            const insertBtn = row.querySelector('.insert-row-btn');
 
             if(typeof TomSelect !== 'undefined' && !productSelect.tomselect) {
                 new TomSelect(productSelect, tomSelectSettings);
             }
 
-            // Event Ganti Produk
             productSelect.addEventListener('change', function() {
                 const selectedValue = this.value;
-                // Note: TomSelect hides original select, we must check options array
-                // If using TomSelect, 'this' refers to original select
                 const originalOption = Array.from(this.options).find(opt => opt.value === selectedValue);
                 const hargaDefault = originalOption ? originalOption.getAttribute('data-harga') : 0;
 
@@ -410,6 +428,13 @@
             hargaInput.addEventListener('input', calculateAllTotals);
             volumeInput.addEventListener('input', calculateAllTotals);
 
+            if (insertBtn) {
+                insertBtn.addEventListener('click', function() {
+                    isFormDirty = true;
+                    addProductRow(row);
+                });
+            }
+
             removeBtn.addEventListener('click', function() {
                 if (productSelect.tomselect) productSelect.tomselect.destroy();
                 row.remove();
@@ -417,27 +442,33 @@
             });
         }
 
-        // Init Events untuk Row yang sudah ada dari Database
+        function addProductRow(targetRow = null) {
+            const clone = productTemplate.content.firstElementChild.cloneNode(true);
+
+            clone.querySelector('.product-select').name = `produk[${productRowIndex}][nama]`;
+            const areaInput = clone.querySelector('input[placeholder="Dinding Luar"]');
+            if(areaInput) areaInput.name = `produk[${productRowIndex}][area]`;
+            clone.querySelector('.volume-input').name = `produk[${productRowIndex}][volume]`;
+            clone.querySelector('.harga-input').name = `produk[${productRowIndex}][harga]`;
+
+            if (targetRow && targetRow instanceof Element) {
+                targetRow.after(clone);
+            } else {
+                productContainer.appendChild(clone);
+            }
+
+            setupProductRowEvents(clone);
+            productRowIndex++;
+            calculateAllTotals();
+        }
+
         document.querySelectorAll('.product-row').forEach(row => {
             setupProductRowEvents(row);
         });
 
-        // Tambah Row Baru
         if(addProductRowBtn) {
             addProductRowBtn.addEventListener('click', function() {
-                const clone = productTemplate.content.firstElementChild.cloneNode(true);
-
-                // Update Name Attributes
-                clone.querySelector('.product-select').name = `produk[${productRowIndex}][nama]`;
-                const areaInput = clone.querySelector('input[placeholder="Dinding Luar"]');
-                if(areaInput) areaInput.name = `produk[${productRowIndex}][area]`;
-                clone.querySelector('.volume-input').name = `produk[${productRowIndex}][volume]`;
-                clone.querySelector('.harga-input').name = `produk[${productRowIndex}][harga]`;
-
-                productContainer.appendChild(clone);
-                setupProductRowEvents(clone);
-                productRowIndex++;
-                calculateAllTotals();
+                addProductRow();
             });
         }
 
@@ -450,9 +481,17 @@
             const volInput = row.querySelector('.jasa-volume');
             const hrgInput = row.querySelector('.jasa-harga');
             const removeBtn = row.querySelector('.remove-jasa-row-btn');
+            const insertBtn = row.querySelector('.insert-jasa-row-btn');
 
             volInput.addEventListener('input', calculateAllTotals);
             hrgInput.addEventListener('input', calculateAllTotals);
+
+            if (insertBtn) {
+                insertBtn.addEventListener('click', function() {
+                    isFormDirty = true;
+                    addJasaRow(row);
+                });
+            }
 
             removeBtn.addEventListener('click', function() {
                 row.remove();
@@ -460,23 +499,32 @@
             });
         }
 
-        // Init Events untuk Row Jasa yang sudah ada
+        function addJasaRow(targetRow = null) {
+            const clone = jasaTemplate.content.firstElementChild.cloneNode(true);
+
+            clone.querySelector('input[placeholder="Contoh: Biaya Scaffolding"]').name = `jasa[${jasaRowIndex}][nama]`;
+            clone.querySelector('.jasa-volume').name = `jasa[${jasaRowIndex}][volume]`;
+            clone.querySelector('.jasa-satuan').name = `jasa[${jasaRowIndex}][satuan]`;
+            clone.querySelector('.jasa-harga').name = `jasa[${jasaRowIndex}][harga]`;
+
+            if (targetRow && targetRow instanceof Element) {
+                targetRow.after(clone);
+            } else {
+                jasaContainer.appendChild(clone);
+            }
+
+            setupJasaRowEvents(clone);
+            jasaRowIndex++;
+            calculateAllTotals();
+        }
+
         document.querySelectorAll('.jasa-row').forEach(row => {
             setupJasaRowEvents(row);
         });
 
         if(addJasaRowBtn) {
             addJasaRowBtn.addEventListener('click', function() {
-                const clone = jasaTemplate.content.firstElementChild.cloneNode(true);
-
-                clone.querySelector('input[placeholder="Contoh: Biaya Scaffolding"]').name = `jasa[${jasaRowIndex}][nama]`;
-                clone.querySelector('.jasa-volume').name = `jasa[${jasaRowIndex}][volume]`;
-                clone.querySelector('.jasa-satuan').name = `jasa[${jasaRowIndex}][satuan]`;
-                clone.querySelector('.jasa-harga').name = `jasa[${jasaRowIndex}][harga]`;
-
-                jasaContainer.appendChild(clone);
-                setupJasaRowEvents(clone);
-                jasaRowIndex++;
+                addJasaRow();
             });
         }
 

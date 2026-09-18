@@ -189,7 +189,13 @@
             <input type="text" class="total-output w-full bg-gray-200 border-gray-300 rounded-md text-sm font-bold text-gray-700 cursor-not-allowed" readonly>
         </div>
 
-        <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end">
+        <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end items-center gap-2">
+            <button type="button" class="insert-row-btn bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-blue-200 shadow-sm active:scale-95" title="Sisip Baris Produk di Bawah Ini">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>+ Sisip Baris</span>
+            </button>
             <button type="button" class="remove-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors" title="Hapus Baris">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -238,8 +244,14 @@
             <input type="text" class="jasa-total w-full bg-gray-200 border-gray-300 rounded-md text-sm font-bold text-gray-700 cursor-not-allowed" readonly>
         </div>
 
-        <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end">
-            <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors">
+        <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end items-center gap-1">
+            <button type="button" class="insert-jasa-row-btn bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-800 px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-green-200 shadow-sm active:scale-95" title="Sisip Baris Jasa di Bawah Ini">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>+ Sisip</span>
+            </button>
+            <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus Baris">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
@@ -318,6 +330,7 @@
             const hargaInput = row.querySelector('.harga-input');
             const volumeInput = row.querySelector('.volume-input');
             const removeBtn = row.querySelector('.remove-row-btn');
+            const insertBtn = row.querySelector('.insert-row-btn');
 
             // Init TomSelect pada row baru
             if (typeof TomSelect !== 'undefined' && !productSelect.tomselect) {
@@ -338,6 +351,14 @@
             hargaInput.addEventListener('input', calculateAllTotals);
             volumeInput.addEventListener('input', calculateAllTotals);
 
+            // Sisip Baris di Bawah
+            if (insertBtn) {
+                insertBtn.addEventListener('click', function() {
+                    isFormDirty = true;
+                    addProductRow(row);
+                });
+            }
+
             // Hapus baris
             removeBtn.addEventListener('click', function() {
                 if (productSelect.tomselect) productSelect.tomselect.destroy();
@@ -346,7 +367,7 @@
             });
         }
 
-        function addProductRow() {
+        function addProductRow(targetRow = null) {
             const clone = productTemplate.content.firstElementChild.cloneNode(true);
 
             // Set atribut name secara dinamis agar Laravel membacanya sebagai array
@@ -355,7 +376,12 @@
             clone.querySelector('.volume-input').name = `produk[${productRowIndex}][volume]`;
             clone.querySelector('.harga-input').name = `produk[${productRowIndex}][harga]`;
 
-            productContainer.appendChild(clone);
+            if (targetRow && targetRow instanceof Element) {
+                targetRow.after(clone);
+            } else {
+                productContainer.appendChild(clone);
+            }
+
             setupProductRowEvents(clone);
             productRowIndex++;
             calculateAllTotals();
@@ -370,9 +396,17 @@
             const volInput = row.querySelector('.jasa-volume');
             const hrgInput = row.querySelector('.jasa-harga');
             const removeBtn = row.querySelector('.remove-jasa-row-btn');
+            const insertBtn = row.querySelector('.insert-jasa-row-btn');
 
             volInput.addEventListener('input', calculateAllTotals);
             hrgInput.addEventListener('input', calculateAllTotals);
+
+            if (insertBtn) {
+                insertBtn.addEventListener('click', function() {
+                    isFormDirty = true;
+                    addJasaRow(row);
+                });
+            }
 
             removeBtn.addEventListener('click', function() {
                 row.remove();
@@ -380,7 +414,7 @@
             });
         }
 
-        function addJasaRow() {
+        function addJasaRow(targetRow = null) {
             const clone = jasaTemplate.content.firstElementChild.cloneNode(true);
 
             // Set atribut name dinamis
@@ -389,7 +423,12 @@
             clone.querySelector('.jasa-satuan').name = `jasa[${jasaRowIndex}][satuan]`;
             clone.querySelector('.jasa-harga').name = `jasa[${jasaRowIndex}][harga]`;
 
-            jasaContainer.appendChild(clone);
+            if (targetRow && targetRow instanceof Element) {
+                targetRow.after(clone);
+            } else {
+                jasaContainer.appendChild(clone);
+            }
+
             setupJasaRowEvents(clone);
             jasaRowIndex++;
             calculateAllTotals();

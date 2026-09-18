@@ -134,9 +134,16 @@
             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Total</label>
             <input type="text" class="subtotal-input w-full rounded-md border-gray-300 bg-gray-200 text-sm text-right font-bold" readonly>
         </div>
-        <button type="button" class="remove-btn absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-        </button>
+        <div class="absolute -top-2 right-2 flex items-center gap-1">
+            <button type="button" class="insert-btn bg-blue-500 text-white rounded-full p-1 shadow hover:bg-blue-600 transition" title="Sisip Baris di Bawah">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+            <button type="button" class="remove-btn bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600 transition" title="Hapus Baris">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
     </div>
 </template>
 
@@ -161,8 +168,8 @@
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
         };
 
-        // Fungsi Tambah Baris (Bisa menerima data awal)
-        function addRow(data = null) {
+        // Fungsi Tambah / Sisip Baris
+        function addRow(data = null, targetRow = null) {
             const newRow = template.cloneNode(true);
 
             // Setup Names
@@ -195,7 +202,12 @@
                 newRow.querySelector('.keterangan-input').value = keterangan;
             }
 
-            container.appendChild(newRow);
+            if (targetRow && targetRow instanceof Element) {
+                targetRow.after(newRow);
+            } else {
+                container.appendChild(newRow);
+            }
+
             initRowEvents(newRow);
             rowIndex++;
         }
@@ -203,6 +215,7 @@
         function initRowEvents(row) {
             const inputs = row.querySelectorAll('input');
             const removeBtn = row.querySelector('.remove-btn');
+            const insertBtn = row.querySelector('.insert-btn');
             const nameInput = row.querySelector('.nama-produk-input');
             const hargaInput = row.querySelector('.harga-input');
             const ukuranInput = row.querySelector('.ukuran-input');
@@ -226,6 +239,13 @@
             });
 
             inputs.forEach(input => input.addEventListener('input', calculateAll));
+
+            if (insertBtn) {
+                insertBtn.addEventListener('click', function() {
+                    addRow(null, row);
+                });
+            }
+
             removeBtn.addEventListener('click', function() { row.remove(); calculateAll(); });
         }
 
