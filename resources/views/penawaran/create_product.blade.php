@@ -274,6 +274,30 @@
         globalDiscountInput.addEventListener('input', calculateAll);
         document.getElementById('add-row-btn').addEventListener('click', addRow);
         addRow();
+
+        // --- Dirty Form Protection & Anti Double Submit ---
+        let isFormDirty = false;
+        let isSubmitting = false;
+
+        const productOfferForm = document.getElementById('product-offer-form');
+        if (productOfferForm) {
+            productOfferForm.addEventListener('input', function() { isFormDirty = true; });
+            productOfferForm.addEventListener('change', function() { isFormDirty = true; });
+            productOfferForm.addEventListener('submit', function() {
+                if (productOfferForm.checkValidity && !productOfferForm.checkValidity()) {
+                    isSubmitting = false;
+                    return;
+                }
+                isSubmitting = true;
+            });
+        }
+
+        window.addEventListener('beforeunload', function(e) {
+            if (isFormDirty && !isSubmitting) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     });
 </script>
 @endsection

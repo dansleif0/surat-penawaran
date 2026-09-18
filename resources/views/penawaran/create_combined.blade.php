@@ -468,10 +468,25 @@
         // INSIALISASI: Tambah 1 baris produk secara otomatis saat halaman pertama dimuat
         addProductRow();
 
-        // --- 5. LOGIKA ANTI DOUBLE-SUBMIT ---
+        // --- 5. LOGIKA PERINGATAN SEBELUM MENINGGALKAN HALAMAN & ANTI DOUBLE-SUBMIT ---
+        let isFormDirty = false;
+        let isSubmitting = false;
+
         const offerForm = document.getElementById('offer-form');
         if (offerForm) {
-            offerForm.addEventListener('submit', function() {
+            offerForm.addEventListener('input', function() {
+                isFormDirty = true;
+            });
+            offerForm.addEventListener('change', function() {
+                isFormDirty = true;
+            });
+            offerForm.addEventListener('submit', function(e) {
+                if (offerForm.checkValidity && !offerForm.checkValidity()) {
+                    isSubmitting = false;
+                    return;
+                }
+                isSubmitting = true;
+
                 const submitBtn = offerForm.querySelector('button[type="submit"]');
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -486,6 +501,25 @@
                 }
             });
         }
+
+        // Tandai dirty saat tambah/hapus baris
+        if (addProductRowBtn) {
+            addProductRowBtn.addEventListener('click', function() {
+                isFormDirty = true;
+            });
+        }
+        if (addJasaRowBtn) {
+            addJasaRowBtn.addEventListener('click', function() {
+                isFormDirty = true;
+            });
+        }
+
+        window.addEventListener('beforeunload', function(e) {
+            if (isFormDirty && !isSubmitting) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     });
 </script>
 @endsection

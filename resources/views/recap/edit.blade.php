@@ -249,6 +249,34 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     calculateTotals();
+
+    // --- Dirty Form Protection & Anti Double Submit ---
+    let isFormDirty = false;
+    let isSubmitting = false;
+
+    const recapForm = document.getElementById('recap-form');
+    if (recapForm) {
+        recapForm.addEventListener('input', function() { isFormDirty = true; });
+        recapForm.addEventListener('change', function() { isFormDirty = true; });
+        recapForm.addEventListener('submit', function() {
+            if (recapForm.checkValidity && !recapForm.checkValidity()) {
+                isSubmitting = false;
+                return;
+            }
+            isSubmitting = true;
+        });
+    }
+
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', function() { isFormDirty = true; });
+    }
+
+    window.addEventListener('beforeunload', function(e) {
+        if (isFormDirty && !isSubmitting) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
 });
 </script>
 

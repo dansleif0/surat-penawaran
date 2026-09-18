@@ -510,10 +510,25 @@
         // Hitung total saat pertama kali load halaman edit
         calculateAllTotals();
 
-        // --- 5. Anti Double-Submit Logic ---
+        // --- 5. Anti Double-Submit & Dirty Form Protection ---
+        let isFormDirty = false;
+        let isSubmitting = false;
+
         const offerForm = document.getElementById('offer-form');
         if (offerForm) {
-            offerForm.addEventListener('submit', function() {
+            offerForm.addEventListener('input', function() {
+                isFormDirty = true;
+            });
+            offerForm.addEventListener('change', function() {
+                isFormDirty = true;
+            });
+            offerForm.addEventListener('submit', function(e) {
+                if (offerForm.checkValidity && !offerForm.checkValidity()) {
+                    isSubmitting = false;
+                    return;
+                }
+                isSubmitting = true;
+
                 const submitButtons = offerForm.querySelectorAll('button[type="submit"]');
                 submitButtons.forEach(btn => {
                     btn.disabled = true;
@@ -524,6 +539,19 @@
             });
         }
 
+        if (addProductRowBtn) {
+            addProductRowBtn.addEventListener('click', function() { isFormDirty = true; });
+        }
+        if (addJasaRowBtn) {
+            addJasaRowBtn.addEventListener('click', function() { isFormDirty = true; });
+        }
+
+        window.addEventListener('beforeunload', function(e) {
+            if (isFormDirty && !isSubmitting) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     });
 </script>
 @endsection
