@@ -190,6 +190,11 @@
         </div>
 
         <div class="absolute top-2 right-2 md:static md:col-span-12 md:w-auto flex justify-end items-center gap-2">
+            <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-700 bg-white border border-gray-200 p-1.5 rounded-md shadow-sm flex items-center justify-center" title="Geser untuk memindahkan posisi (Drag to reorder)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 2a2 2 0 100 4 2 2 0 000-4zM13 2a2 2 0 100 4 2 2 0 000-4zM7 8a2 2 0 100 4 2 2 0 000-4zM13 8a2 2 0 100 4 2 2 0 000-4zM7 14a2 2 0 100 4 2 2 0 000-4zM13 14a2 2 0 100 4 2 2 0 000-4z" />
+                </svg>
+            </div>
             <button type="button" class="insert-row-btn bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-blue-200 shadow-sm active:scale-95" title="Sisip Baris Produk di Bawah Ini">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -245,6 +250,11 @@
         </div>
 
         <div class="absolute top-2 right-2 md:static md:col-span-1 md:flex md:justify-end items-center gap-1">
+            <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-700 bg-white border border-gray-200 p-1.5 rounded-md shadow-sm flex items-center justify-center" title="Geser untuk memindahkan posisi (Drag to reorder)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 2a2 2 0 100 4 2 2 0 000-4zM13 2a2 2 0 100 4 2 2 0 000-4zM7 8a2 2 0 100 4 2 2 0 000-4zM13 8a2 2 0 100 4 2 2 0 000-4zM7 14a2 2 0 100 4 2 2 0 000-4zM13 14a2 2 0 100 4 2 2 0 000-4z" />
+                </svg>
+            </div>
             <button type="button" class="insert-jasa-row-btn bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-800 px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs font-bold border border-green-200 shadow-sm active:scale-95" title="Sisip Baris Jasa di Bawah Ini">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -253,7 +263,7 @@
             </button>
             <button type="button" class="remove-jasa-row-btn text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus Baris">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
             </button>
         </div>
@@ -493,6 +503,60 @@
             `;
                 }
                 totalKeseluruhanDisplay.innerHTML = html;
+            }
+        }
+
+        // --- FUNGSI RE-INDEX INPUT & SORTABLE DRAG & DROP ---
+        function reindexProductRows() {
+            document.querySelectorAll('#product-rows-container .product-row').forEach((row, index) => {
+                const select = row.querySelector('.product-select');
+                const area = row.querySelector('.area-input');
+                const vol = row.querySelector('.volume-input');
+                const hrg = row.querySelector('.harga-input');
+                if (select) select.name = `produk[${index}][nama]`;
+                if (area) area.name = `produk[${index}][area]`;
+                if (vol) vol.name = `produk[${index}][volume]`;
+                if (hrg) hrg.name = `produk[${index}][harga]`;
+            });
+        }
+
+        function reindexJasaRows() {
+            document.querySelectorAll('#jasa-rows-container .jasa-row').forEach((row, index) => {
+                const nama = row.querySelector('.jasa-nama-input');
+                const vol = row.querySelector('.jasa-volume');
+                const sat = row.querySelector('.jasa-satuan');
+                const hrg = row.querySelector('.jasa-harga');
+                if (nama) nama.name = `jasa[${index}][nama]`;
+                if (vol) vol.name = `jasa[${index}][volume]`;
+                if (sat) sat.name = `jasa[${index}][satuan]`;
+                if (hrg) hrg.name = `jasa[${index}][harga]`;
+            });
+        }
+
+        if (typeof Sortable !== 'undefined') {
+            if (productContainer) {
+                new Sortable(productContainer, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'opacity-50',
+                    onEnd: function() {
+                        reindexProductRows();
+                        calculateAllTotals();
+                        isFormDirty = true;
+                    }
+                });
+            }
+            if (jasaContainer) {
+                new Sortable(jasaContainer, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'opacity-50',
+                    onEnd: function() {
+                        reindexJasaRows();
+                        calculateAllTotals();
+                        isFormDirty = true;
+                    }
+                });
             }
         }
 

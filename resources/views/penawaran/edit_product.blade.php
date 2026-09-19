@@ -135,6 +135,11 @@
             <input type="text" class="subtotal-input w-full rounded-md border-gray-300 bg-gray-200 text-sm text-right font-bold" readonly>
         </div>
         <div class="absolute -top-2 right-2 flex items-center gap-1">
+            <div class="drag-handle cursor-grab active:cursor-grabbing bg-gray-600 text-white rounded-full p-1 shadow hover:bg-gray-700 transition flex items-center justify-center" title="Geser untuk memindahkan posisi">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 2a2 2 0 100 4 2 2 0 000-4zM13 2a2 2 0 100 4 2 2 0 000-4zM7 8a2 2 0 100 4 2 2 0 000-4zM13 8a2 2 0 100 4 2 2 0 000-4zM7 14a2 2 0 100 4 2 2 0 000-4zM13 14a2 2 0 100 4 2 2 0 000-4z" />
+                </svg>
+            </div>
             <button type="button" class="insert-btn bg-blue-500 text-white rounded-full p-1 shadow hover:bg-blue-600 transition" title="Sisip Baris di Bawah">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -272,6 +277,37 @@
             displayTotalQty.textContent = totalQty;
             displaySubtotal.textContent = formatRupiah(totalHargaProduk);
             displayGrandTotal.textContent = formatRupiah(grandTotal);
+        }
+
+        function reindexItems() {
+            document.querySelectorAll('#items-container .item-row').forEach((row, index) => {
+                const nama = row.querySelector('.nama-produk-input');
+                const warna = row.querySelector('.kode-warna-input');
+                const ket = row.querySelector('.keterangan-input');
+                const ukur = row.querySelector('.ukuran-input');
+                const harga = row.querySelector('.harga-input');
+                const qty = row.querySelector('.qty-input');
+
+                if (nama) nama.name = `items[${index}][nama_produk]`;
+                if (warna) warna.name = `items[${index}][kode_warna]`;
+                if (ket) ket.name = `items[${index}][keterangan]`;
+                if (ukur) ukur.name = `items[${index}][ukuran]`;
+                if (harga) harga.name = `items[${index}][harga_satuan]`;
+                if (qty) qty.name = `items[${index}][qty]`;
+            });
+        }
+
+        if (typeof Sortable !== 'undefined' && container) {
+            new Sortable(container, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'opacity-50',
+                onEnd: function() {
+                    reindexItems();
+                    calculateAll();
+                    isFormDirty = true;
+                }
+            });
         }
 
         globalDiscountInput.addEventListener('input', calculateAll);

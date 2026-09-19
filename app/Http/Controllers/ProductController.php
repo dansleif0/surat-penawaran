@@ -14,13 +14,67 @@ class ProductController extends Controller
     // 1. MASTER DATA PRODUK (DAFTAR HARGA)
     // =========================================================================
 
-    // Menampilkan daftar harga (Read)
-    public function index()
+    // Menampilkan daftar harga (Read) dengan fitur pencarian dan filter dropdown
+    public function index(Request $request)
     {
-        // Mengambil semua produk diurutkan terbaru
-        $products = Product::latest()->get();
-        // Pastikan view ini ada di: resources/views/harga/index.blade.php
-        return view('harga.index', ['products' => $products]);
+        $query = Product::query();
+
+        // 1. Filter Pencarian (Keyword Search)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_produk', 'like', "%{$search}%")
+                  ->orWhere('performa', 'like', "%{$search}%")
+                  ->orWhere('hasil_akhir', 'like', "%{$search}%")
+                  ->orWhere('kriteria', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Filter Dropdown Kriteria
+        if ($request->filled('kriteria')) {
+            $query->where('kriteria', $request->kriteria);
+        }
+
+        // 3. Filter Dropdown Nama Brand (performa)
+        if ($request->filled('brand')) {
+            $query->where('performa', $request->brand);
+        }
+
+        // 4. Filter Dropdown Hasil Akhir
+        if ($request->filled('hasil_akhir')) {
+            $query->where('hasil_akhir', $request->hasil_akhir);
+        }
+
+        $products = $query->latest()->get();
+
+        // Opsi unik dari DB untuk Dropdown Filter
+        $kriteriaOptions = Product::whereNotNull('kriteria')
+            ->where('kriteria', '!=', '')
+            ->distinct()
+            ->pluck('kriteria')
+            ->sort()
+            ->values();
+
+        $brandOptions = Product::whereNotNull('performa')
+            ->where('performa', '!=', '')
+            ->distinct()
+            ->pluck('performa')
+            ->sort()
+            ->values();
+
+        $hasilAkhirOptions = Product::whereNotNull('hasil_akhir')
+            ->where('hasil_akhir', '!=', '')
+            ->distinct()
+            ->pluck('hasil_akhir')
+            ->sort()
+            ->values();
+
+        return view('harga.index', compact(
+            'products',
+            'kriteriaOptions',
+            'brandOptions',
+            'hasilAkhirOptions'
+        ));
     }
 
     // Form tambah harga baru (Create View)

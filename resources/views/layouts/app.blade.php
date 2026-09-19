@@ -218,6 +218,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
     <script>
         // Fungsi Sidebar Dropdown
         function toggleSubmenu(submenuId, iconId) {
