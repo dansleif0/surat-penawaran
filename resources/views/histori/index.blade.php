@@ -17,13 +17,42 @@
             </div>
         </div>
 
-        {{-- Form Pencarian --}}
-        <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-            <form action="{{ route('histori.index') }}" method="GET" class="w-full md:w-1/2">
-                <div class="flex">
-                    <input type="text" name="search" placeholder="Cari Nama Klien / No. Surat..." class="block w-full rounded-l-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ $search ?? '' }}">
-                    <button type="submit" class="bg-gray-800 text-white font-bold py-2 px-4 rounded-r-md hover:bg-gray-700 transition">
-                        Cari
+        {{-- Kartu Pencarian & Filter Jenis --}}
+        <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-6">
+            <form action="{{ route('histori.index') }}" method="GET" class="flex flex-col md:flex-row items-end justify-between gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full md:w-3/4">
+                    {{-- Input Pencarian --}}
+                    <div class="md:col-span-2">
+                        <label for="search" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Pencarian</label>
+                        <div class="relative">
+                            <input type="text" name="search" id="search" placeholder="Cari Nama Klien, No. Surat, atau Detail..." class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors" value="{{ $search ?? '' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Filter Jenis --}}
+                    <div>
+                        <label for="jenis" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Filter Jenis</label>
+                        <select name="jenis" id="jenis" onchange="this.form.submit()" class="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors bg-white">
+                            <option value="">Semua Jenis</option>
+                            <option value="produk" {{ ($jenis ?? '') == 'produk' ? 'selected' : '' }}>Penawaran Produk</option>
+                            <option value="proyek" {{ ($jenis ?? '') == 'proyek' ? 'selected' : '' }}>Penawaran Proyek</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Action Buttons --}}
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    @if(request('search') || request('jenis'))
+                        <a href="{{ route('histori.index') }}" class="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors border border-red-200">
+                            Reset Filter
+                        </a>
+                    @endif
+                    <button type="submit" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        Cari / Apply
                     </button>
                 </div>
             </form>
@@ -143,7 +172,7 @@
         </div>
 
         <div class="mt-6 pb-12">
-            {{ $offers->appends(['search' => $search])->links() }}
+            {{ $offers->appends(request()->query())->links() }}
         </div>
     </div>
 </div>

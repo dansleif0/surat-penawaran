@@ -21,18 +21,46 @@
             </div>
         </div>
 
-        <form action="{{ route('invoice.histori') }}" method="GET" class="mb-6">
-            <div class="flex gap-2">
-                <input type="text"
-                       name="search"
-                       placeholder="Cari No. Invoice, Nama Klien, atau No. Surat Penawaran..."
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-800 focus:ring-gray-800"
-                       value="{{ $search ?? '' }}">
-                <button type="submit" class="mt-1 bg-gray-800 text-white font-bold py-2 px-6 rounded hover:bg-gray-700 transition">
-                    Cari
-                </button>
-            </div>
-        </form>
+        {{-- Kartu Pencarian & Filter Invoice Gabungan --}}
+        <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-6">
+            <form action="{{ route('invoice.histori') }}" method="GET" class="flex flex-col md:flex-row items-end justify-between gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full md:w-3/4">
+                    {{-- Input Pencarian --}}
+                    <div class="md:col-span-2">
+                        <label for="search" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Pencarian</label>
+                        <div class="relative">
+                            <input type="text" name="search" id="search" placeholder="Cari No. Invoice, Nama Klien, atau Surat Penawaran..." class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors" value="{{ $search ?? '' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Filter Invoice Gabungan --}}
+                    <div>
+                        <label for="status_gabungan" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Filter Tipe Invoice</label>
+                        <select name="status_gabungan" id="status_gabungan" onchange="this.form.submit()" class="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors bg-white">
+                            <option value="">Semua Invoice</option>
+                            <option value="single" {{ ($status_gabungan ?? '') == 'single' ? 'selected' : '' }}>Invoice Biasa (Single)</option>
+                            <option value="merge" {{ ($status_gabungan ?? '') == 'merge' ? 'selected' : '' }}>Invoice Gabungan (Merge)</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Action Buttons --}}
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    @if(request('search') || request('status_gabungan'))
+                        <a href="{{ route('invoice.histori') }}" class="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors border border-red-200">
+                            Reset Filter
+                        </a>
+                    @endif
+                    <button type="submit" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        Cari / Apply
+                    </button>
+                </div>
+            </form>
+        </div>
 
         @if (session('success'))
             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 shadow-sm" role="alert">
@@ -198,7 +226,7 @@
         </form>
 
         <div class="mt-6">
-            {{ $invoices->appends(['search' => $search ?? ''])->links() }}
+            {{ $invoices->appends(request()->query())->links() }}
         </div>
 
     </div>

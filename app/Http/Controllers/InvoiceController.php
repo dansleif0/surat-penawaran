@@ -14,25 +14,39 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil kata kunci pencarian
         $search = $request->input('search');
+        $status_gabungan = $request->input('status_gabungan');
 
-        // Mulai query ke model Invoice
         $query = Invoice::query();
 
-        // Jika ada pencarian, filter berdasarkan nama klien atau no. invoice
         if ($search) {
-            $query->where('nama_klien', 'like', '%' . $search . '%')
-                ->orWhere('no_invoice', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_klien', 'like', '%' . $search . '%')
+                    ->orWhere('no_invoice', 'like', '%' . $search . '%')
+                    ->orWhereHas('offer', function ($o) use ($search) {
+                        $o->where('nama_klien', 'like', '%' . $search . '%')
+                          ->orWhere('id', $search);
+                    });
+            });
         }
 
-        // Ambil data terbaru dengan pagination (15 per halaman)
+        if ($status_gabungan) {
+            if ($status_gabungan === 'merge') {
+                $query->where('status', 'merge');
+            } elseif ($status_gabungan === 'single') {
+                $query->where(function ($q) {
+                    $q->where('status', 'single')
+                      ->orWhereNull('status');
+                });
+            }
+        }
+
         $invoices = $query->latest()->paginate(15);
 
-        // Kirim data ke view
         return view('invoice.histori', [
             'invoices' => $invoices,
-            'search' => $search ?? ''
+            'search' => $search ?? '',
+            'status_gabungan' => $status_gabungan ?? ''
         ]);
     }
 

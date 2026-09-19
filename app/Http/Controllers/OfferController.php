@@ -12,17 +12,31 @@ class OfferController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $jenis = $request->input('jenis');
         $query = Offer::query();
 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_klien', 'like', '%' . $search . '%')
+                    ->orWhere('client_details', 'like', '%' . $search . '%')
                     ->orWhere('id', $search);
             });
         }
 
+        if ($jenis) {
+            if ($jenis === 'produk') {
+                $query->where('jenis_penawaran', 'produk');
+            } elseif ($jenis === 'proyek') {
+                $query->where(function ($q) {
+                    $q->where('jenis_penawaran', 'proyek')
+                      ->orWhere('jenis_penawaran', 'jasa')
+                      ->orWhereNull('jenis_penawaran');
+                });
+            }
+        }
+
         $offers = $query->latest()->paginate(15);
-        return view('histori.index', compact('offers', 'search'));
+        return view('histori.index', compact('offers', 'search', 'jenis'));
     }
 
     public function create_combined()
