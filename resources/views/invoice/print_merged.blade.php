@@ -9,11 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* RESET STANDAR UNTUK PRINT MARGIN NARROW */
+        /* RESET STANDAR UNTUK PRINT UKURAN 21.00cm x 13.97cm */
         @media print {
             @page {
-                size: A4;
-                margin: 12.7mm;
+                size: 21.00cm 13.97cm;
+                margin: 3mm 5mm;
             }
 
             body {
@@ -29,12 +29,17 @@
             }
 
             #main-container {
-                width: 210mm;
+                width: 20.0cm !important;
+                height: 13.37cm !important;
                 margin: 0 auto !important;
-                padding: 10mm 12.7mm !important;
+                padding: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
                 float: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                box-sizing: border-box !important;
             }
 
             .hide-header-on-print .statement-header {
@@ -42,7 +47,7 @@
             }
 
             .hide-header-on-print #main-container {
-                padding-top: 55mm !important;
+                padding-top: 35mm !important;
             }
 
             table {
@@ -66,6 +71,19 @@
 
         body {
             background-color: #f3f4f6;
+        }
+
+        #main-container {
+            background-color: white;
+            width: 21.00cm;
+            height: 13.97cm;
+            margin: 20px auto;
+            padding: 4mm 6mm;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
         }
     </style>
 </head>

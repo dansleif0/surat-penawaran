@@ -9,12 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* 1. RESET STANDAR UNTUK PRINT */
+        /* 1. RESET STANDAR UNTUK PRINT UKURAN 21.00cm x 13.97cm */
         @media print {
             @page {
-                size: A4;
-                margin: 0;
-                /* Margin nol agar kita kontrol penuh lewat CSS */
+                size: 21.00cm 13.97cm;
+                margin: 3mm 5mm;
             }
 
             body {
@@ -29,16 +28,19 @@
                 display: none !important;
             }
 
-            /* KONTROL PRESISI A4 */
+            /* KONTROL PRESISI 21.00cm x 13.97cm */
             #main-container {
-                width: 210mm;
-                /* Jangan gunakan min-height: 297mm agar jika konten sedikit tidak memaksa 2 halaman */
+                width: 20.0cm !important;
+                height: 13.37cm !important;
                 margin: 0 auto !important;
-                padding: 15mm 20mm !important;
-                /* Margin konten standar surat */
+                padding: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
                 float: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                box-sizing: border-box !important;
             }
 
             /* LOGIKA PRINT TANPA KOP */
@@ -47,8 +49,7 @@
             }
 
             .hide-header-on-print #main-container {
-                padding-top: 60mm !important;
-                /* Sesuaikan dengan tinggi Kop fisik Anda */
+                padding-top: 35mm !important;
             }
 
             /* ANTI TERPOTONG */
@@ -74,19 +75,20 @@
 
         /* 2. TAMPILAN LAYAR (PREVIEW) */
         body {
-
             background-color: #f3f4f6;
-            /* Abu-abu netral */
         }
 
         #main-container {
             background-color: white;
-            width: 210mm;
-            min-height: 297mm;
-            /* Simulasi kertas A4 di layar */
+            width: 21.00cm;
+            height: 13.97cm;
             margin: 20px auto;
-            padding: 20mm;
+            padding: 4mm 6mm;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
         }
 
         .sans {

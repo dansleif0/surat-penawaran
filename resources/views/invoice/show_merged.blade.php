@@ -137,8 +137,8 @@
 <style>
     @media print {
         @page {
-            size: A4;
-            margin: 12.7mm;
+            size: 21.00cm 13.97cm;
+            margin: 3mm 5mm;
         }
 
         .print\:hidden, nav, header.bg-white.shadow-sm, aside {

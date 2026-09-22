@@ -158,8 +158,8 @@
         }
 
         @page {
-            size: A4;
-            margin: 12.7mm;
+            size: 21.00cm 13.97cm;
+            margin: 3mm 5mm;
         }
 
         #invoice-print-area {
