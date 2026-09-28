@@ -41,12 +41,7 @@
                     </div>
                     <div class="space-y-3">
                         <label class="block text-xs font-black text-indigo-400 uppercase tracking-widest">Jenis Pekerjaan</label>
-                        <select name="judul_pekerjaan" class="w-full border-b-2 border-indigo-200 bg-transparent focus:border-indigo-500 outline-none font-bold py-2 transition-all cursor-pointer text-gray-800" required>
-                            <option value="" disabled selected>-- Pilih Jenis Pekerjaan --</option>
-                            <option value="Renovasi dan Pengecatan Interior">Renovasi dan Pengecatan Interior</option>
-                            <option value="Renovasi dan Pengecatan Exterior">Renovasi dan Pengecatan Exterior</option>
-                            <option value="Renovasi dan Pengecatan Interior & Exterior">Renovasi dan Pengecatan Interior & Exterior</option>
-                        </select>
+                        <input type="text" name="judul_pekerjaan" value="{{ old('judul_pekerjaan', $defaultJenisPekerjaan ?? '') }}" class="w-full border-b-2 border-indigo-200 bg-transparent focus:border-indigo-500 outline-none font-bold py-2 transition-all text-gray-800" placeholder="Masukkan jenis pekerjaan" required>
                     </div>
                 </div>
 

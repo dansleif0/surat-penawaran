@@ -29,6 +29,10 @@ class SkpController extends Controller
         $tahunOffer = $offer->created_at->format('Y');
         $refNoPenawaran = sprintf('00%d/SP/TGI-1/%s/%s', $offer->id, $bulanOffer, $tahunOffer);
 
+        // 3. Process default jenis pekerjaan from offer perihal
+        $perihal = $offer->perihal ?? 'Penawaran Jasa Apply dan Supply Pengecatan';
+        $defaultJenisPekerjaan = preg_replace('/^Penawaran\s*(:\s*)?/i', '', trim($perihal));
+
         $pihakDua = [
             'nama' => 'Samsu Rizal',
             'jabatan' => 'General Manager',
@@ -40,6 +44,7 @@ class SkpController extends Controller
             'offer' => $offer,
             'noSurat' => $noSurat,
             'refNoPenawaran' => $refNoPenawaran, // Kirim variabel baru ini
+            'defaultJenisPekerjaan' => $defaultJenisPekerjaan,
             'pihakDua' => $pihakDua
         ]);
     }

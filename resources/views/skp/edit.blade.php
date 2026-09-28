@@ -33,12 +33,7 @@
                     tentang Pekerjaan:
                 </p>
 
-                <select name="judul_pekerjaan" class="w-full mt-2 border-b border-gray-400 bg-transparent focus:outline-none font-semibold py-1 cursor-pointer hover:bg-gray-100 transition" required>
-                    <option value="" disabled>-- Pilih Jenis Pekerjaan --</option>
-                    <option value="Renovasi dan Pengecatan Interior" {{ $skp->judul_pekerjaan == 'Renovasi dan Pengecatan Interior' ? 'selected' : '' }}>Renovasi dan Pengecatan Interior</option>
-                    <option value="Renovasi dan Pengecatan Exterior" {{ $skp->judul_pekerjaan == 'Renovasi dan Pengecatan Exterior' ? 'selected' : '' }}>Renovasi dan Pengecatan Exterior</option>
-                    <option value="Renovasi dan Pengecatan Interior & Exterior" {{ $skp->judul_pekerjaan == 'Renovasi dan Pengecatan Interior & Exterior' ? 'selected' : '' }}>Renovasi dan Pengecatan Interior & Exterior</option>
-                </select>
+                <input type="text" name="judul_pekerjaan" value="{{ old('judul_pekerjaan', $skp->judul_pekerjaan) }}" class="w-full mt-2 border-b border-gray-400 bg-transparent focus:outline-none font-semibold py-1 transition text-gray-800" placeholder="Masukkan jenis pekerjaan" required>
 
                 <p class="mt-4">
                     Maka pada hari ini, tanggal
