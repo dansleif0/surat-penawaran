@@ -59,6 +59,9 @@
             @if($invoice->offer && $invoice->offer->client_details)
             <p><span class="font-medium w-20 inline-block">Alamat</span>: {{ $invoice->offer->client_details }}</p>
             @endif
+            @if(!empty($invoice->catatan_tambahan))
+            <p><span class="font-medium w-20 inline-block">Catatan</span>: {!! nl2br(e($invoice->catatan_tambahan)) !!}</p>
+            @endif
 
             <table class="w-full mt-4 border-collapse border border-black">
                 <thead class="bg-gray-100">

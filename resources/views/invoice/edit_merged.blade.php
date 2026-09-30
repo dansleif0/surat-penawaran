@@ -130,6 +130,11 @@
                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-medium text-gray-800"
                                    required>
                         </div>
+
+                        <div class="md:col-span-2">
+                            <label for="catatan_tambahan" class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan (opsional, tampil di bawah Catatan)</label>
+                            <textarea name="catatan_tambahan" id="catatan_tambahan" rows="2" placeholder="Contoh: NO PO : PO/LIVE/2609/00953" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">{{ old('catatan_tambahan', $invoice->catatan_tambahan) }}</textarea>
+                        </div>
                     </div>
                 </fieldset>
 

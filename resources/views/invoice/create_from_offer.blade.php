@@ -102,6 +102,10 @@
                          <label for="diskon" class="block text-sm font-medium text-gray-700">Diskon (Rp)</label>
                          <input type="number" name="diskon" id="diskon" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm calc-trigger">
                     </div>
+                    <div class="md:col-span-2">
+                        <label for="catatan_tambahan" class="block text-sm font-medium text-gray-700">Catatan Tambahan (opsional, tampil di bawah Catatan)</label>
+                        <textarea name="catatan_tambahan" id="catatan_tambahan" rows="2" placeholder="Contoh: NO PO : PO/LIVE/2609/00953" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-800 focus:ring-gray-800 text-sm">{{ old('catatan_tambahan') }}</textarea>
+                    </div>
                 </div>
 
                 <!-- Pekerjaan Tambahan -->

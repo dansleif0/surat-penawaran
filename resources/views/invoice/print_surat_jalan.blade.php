@@ -342,7 +342,9 @@
                     <div class="col-span-7 space-y-0.5">
                         <p><span class="font-bold">CREDIT TERM</span> : 0 hari &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="font-bold">JATUH TEMPO</span> : {{ \Carbon\Carbon::parse($invoice->created_at)->format('d F Y') }}</p>
                         <p><span class="font-bold">Catatan</span> : {{ $invoice->offer->client_details ?? ($invoice->nama_klien . ', ' . ($invoice->offer->perihal ?? '')) }}</p>
-                        @if($invoice->offer && $invoice->offer->no_po)
+                        @if(!empty($invoice->catatan_tambahan))
+                            <div class="pl-14 font-semibold uppercase leading-tight whitespace-pre-line">{!! e($invoice->catatan_tambahan) !!}</div>
+                        @elseif($invoice->offer && $invoice->offer->no_po)
                             <p class="pl-14"><span class="font-bold">NO PO</span> : {{ $invoice->offer->no_po }}</p>
                         @endif
                         <p><span class="font-bold">Terbilang</span> : {{ terbilang_indo($invoice->grand_total) }}</p>
@@ -544,7 +546,12 @@
                         <span class="w-16 font-bold shrink-0">Catatan</span>
                         <span class="mr-1">:</span>
                         <div class="font-semibold uppercase leading-tight">
-                            {{ $invoice->offer->client_details ?? ($invoice->nama_klien . ', ' . ($invoice->offer->perihal ?? '')) }}
+                            <div>{{ $invoice->offer->client_details ?? ($invoice->nama_klien . ', ' . ($invoice->offer->perihal ?? '')) }}</div>
+                            @if(!empty($invoice->catatan_tambahan))
+                                <div class="font-semibold uppercase leading-tight mt-0.5 whitespace-pre-line">{!! e($invoice->catatan_tambahan) !!}</div>
+                            @elseif($invoice->offer && $invoice->offer->no_po)
+                                <div class="font-semibold uppercase leading-tight mt-0.5">NO PO : {{ $invoice->offer->no_po }}</div>
+                            @endif
                         </div>
                     </div>
                     <div class="flex items-center pt-0.5">

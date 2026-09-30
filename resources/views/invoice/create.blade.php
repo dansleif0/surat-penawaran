@@ -18,6 +18,10 @@
                         <label for="no_invoice" class="block text-sm font-medium text-gray-700">Nomor Invoice</label>
                         <input type="text" name="no_invoice" id="no_invoice" value="INV/2025/10/001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-800 focus:ring-gray-800">
                     </div>
+                    <div class="md:col-span-2">
+                        <label for="catatan_tambahan" class="block text-sm font-medium text-gray-700">Catatan Tambahan (opsional, tampil di bawah Catatan)</label>
+                        <textarea name="catatan_tambahan" id="catatan_tambahan" rows="2" placeholder="Contoh: NO PO : PO/LIVE/2609/00953" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-800 focus:ring-gray-800 text-sm">{{ old('catatan_tambahan') }}</textarea>
+                    </div>
                 </div>
             </fieldset>
 

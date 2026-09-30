@@ -127,6 +127,7 @@ class InvoiceController extends Controller
             'status' => 'single',
             'no_invoice' => $request->no_invoice ?? 'INV-' . date('Ymd') . '-' . $offer->id,
             'nama_klien' => $offer->nama_klien,
+            'catatan_tambahan' => $request->catatan_tambahan,
             'total_penawaran' => $total_penawaran,
             'total_tambahan' => $total_tambahan,
             'diskon' => $diskon,
@@ -246,6 +247,7 @@ class InvoiceController extends Controller
             $invoice->update([
                 'no_invoice' => $request->no_invoice,
                 'nama_klien' => $request->nama_klien,
+                'catatan_tambahan' => $request->catatan_tambahan,
                 'total_penawaran' => $totalPenawaran,
                 'total_tambahan' => $totalTambahan,
                 'diskon' => $diskon,
@@ -331,6 +333,7 @@ class InvoiceController extends Controller
 
         // 1. Update data di tabel 'invoices'
         $invoice->update([
+            'catatan_tambahan' => $request->catatan_tambahan,
             'total_tambahan' => $total_tambahan,
             'diskon' => $diskon,
             'grand_total' => $grand_total,
@@ -512,6 +515,7 @@ class InvoiceController extends Controller
             'status' => 'merge',
             'no_invoice' => $request->no_invoice,
             'nama_klien' => $request->nama_klien,
+            'catatan_tambahan' => $request->catatan_tambahan,
             'total_penawaran' => $totalPenawaran,
             'total_tambahan' => $totalTambahan,
             'diskon' => $diskon,

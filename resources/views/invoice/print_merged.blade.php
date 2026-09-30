@@ -146,6 +146,9 @@
                     @if($invoice->offer && $invoice->offer->client_details)
                         <p class="text-black">{{ $invoice->offer->client_details }}</p>
                     @endif
+                    @if(!empty($invoice->catatan_tambahan))
+                        <p class="text-black mt-1">Catatan: {!! nl2br(e($invoice->catatan_tambahan)) !!}</p>
+                    @endif
                     <p class="text-black mt-1 font-medium">Phone : {{ optional($invoice->offer)->client_details ? '' : '-' }}</p>
                 </div>
             </div>
