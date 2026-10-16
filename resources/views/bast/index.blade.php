@@ -8,7 +8,7 @@
             <h1 class="text-3xl font-bold text-gray-800">
                 Histori Berita Acara Serah Terima (BAST)
             </h1>
-            <a href="{{ route('histori.index') }}" class="bg-gray-800 text-white font-bold py-2 px-4 rounded hover:bg-gray-700 transition">
+            <a href="{{ route('histori.index', ['jenis' => 'proyek']) }}" class="bg-gray-800 text-white font-bold py-2 px-4 rounded hover:bg-gray-700 transition">
                 + Buat BAST Baru
             </a>
         </div>

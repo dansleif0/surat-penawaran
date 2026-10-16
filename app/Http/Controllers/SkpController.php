@@ -11,6 +11,10 @@ class SkpController extends Controller
     // === 1. FORMULIR PEMBUATAN SKP ===
     public function create(Offer $offer)
     {
+        if ($offer->jenis_penawaran === 'produk') {
+            return redirect()->route('histori.index')->with('error', 'Fitur SPK hanya tersedia untuk penawaran jenis proyek.');
+        }
+
         // Cek jika SKP sudah pernah dibuat
         if (Skp::where('offer_id', $offer->id)->exists()) {
             return redirect()->back()->with('error', 'SKP untuk penawaran ini sudah dibuat.');
@@ -52,6 +56,10 @@ class SkpController extends Controller
     // === 2. SIMPAN DATA SKP ===
     public function store(Request $request, Offer $offer)
     {
+        if ($offer->jenis_penawaran === 'produk') {
+            return redirect()->route('histori.index')->with('error', 'Fitur SPK hanya tersedia untuk penawaran jenis proyek.');
+        }
+
         // 1. Validasi
         $request->validate([
             'no_surat' => 'required',

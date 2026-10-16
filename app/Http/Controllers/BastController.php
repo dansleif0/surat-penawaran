@@ -13,6 +13,10 @@ class BastController extends Controller
     // === Menampilkan Form Pembuatan BAST ===
     public function create(Offer $offer)
     {
+        if ($offer->jenis_penawaran === 'produk') {
+            return redirect()->route('histori.index')->with('error', 'Fitur BAST hanya tersedia untuk penawaran jenis proyek.');
+        }
+
         // Cek apakah BAST sudah ada
         if ($offer->bast) {
              return redirect()->back()->with('error', 'BAST untuk penawaran ini sudah dibuat.');
@@ -39,6 +43,10 @@ class BastController extends Controller
     // === Menyimpan Data BAST ===
     public function store(Request $request, Offer $offer)
     {
+        if ($offer->jenis_penawaran === 'produk') {
+            return redirect()->route('histori.index')->with('error', 'Fitur BAST hanya tersedia untuk penawaran jenis proyek.');
+        }
+
         // 1. Validasi Input
         $request->validate([
             'no_surat' => 'required|string',

@@ -16,8 +16,9 @@ class InvoiceController extends Controller
     {
         $search = $request->input('search');
         $status_gabungan = $request->input('status_gabungan');
+        $jenis = $request->input('jenis') ?? $request->input('tipe_invoice');
 
-        $query = Invoice::query();
+        $query = Invoice::with(['offer']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -28,6 +29,20 @@ class InvoiceController extends Controller
                           ->orWhere('id', $search);
                     });
             });
+        }
+
+        if ($jenis) {
+            if ($jenis === 'produk') {
+                $query->whereHas('offer', function ($q) {
+                    $q->where('jenis_penawaran', 'produk');
+                });
+            } elseif ($jenis === 'proyek') {
+                $query->whereHas('offer', function ($q) {
+                    $q->where('jenis_penawaran', 'proyek')
+                      ->orWhere('jenis_penawaran', 'jasa')
+                      ->orWhereNull('jenis_penawaran');
+                });
+            }
         }
 
         if ($status_gabungan) {
@@ -46,7 +61,8 @@ class InvoiceController extends Controller
         return view('invoice.histori', [
             'invoices' => $invoices,
             'search' => $search ?? '',
-            'status_gabungan' => $status_gabungan ?? ''
+            'status_gabungan' => $status_gabungan ?? '',
+            'jenis' => $jenis ?? ''
         ]);
     }
 
@@ -81,14 +97,19 @@ class InvoiceController extends Controller
             return view('invoice.print_merged', compact('invoice'));
         }
 
+        // Jika invoice adalah produk, cetak format satu kesatuan invoice & surat jalan
+        if ($invoice->jenis === 'produk') {
+            return view('invoice.print_surat_jalan', compact('invoice'));
+        }
+
+        // Untuk invoice proyek, cetak dokumen invoice proyek saja
         return view('invoice.print', compact('invoice'));
     }
 
     public function printSuratJalan($id)
     {
-        $invoice = \App\Models\Invoice::with(['offer.items', 'offer.jasaItems', 'additions', 'payments', 'mergedItems'])->findOrFail($id);
-
-        return view('invoice.print_surat_jalan', compact('invoice'));
+        // Alihkan langsung ke print invoice
+        return redirect()->route('invoice.print', $id);
     }
 
     public function storeFromOffer(Request $request)
@@ -174,6 +195,11 @@ class InvoiceController extends Controller
 
         if ($invoice->status === 'merge') {
             return view('invoice.show_merged', compact('invoice'));
+        }
+
+        // Jika invoice adalah produk, gunakan tampilan kesatuan Invoice & Surat Jalan
+        if ($invoice->jenis === 'produk') {
+            return view('invoice.print_surat_jalan', compact('invoice'));
         }
 
         return view('invoice.show', compact('invoice'));

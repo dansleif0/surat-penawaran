@@ -10,6 +10,15 @@ class Invoice extends Model
     use HasFactory;
     protected $guarded = []; // Izinkan semua kolom diisi
 
+    // Accessor jenis invoice: 'produk' atau 'proyek'
+    public function getJenisAttribute()
+    {
+        if ($this->offer && $this->offer->jenis_penawaran === 'produk') {
+            return 'produk';
+        }
+        return 'proyek';
+    }
+
     // Relasi ke Penawaran (Offer) aslinya
     public function offer() {
         return $this->belongsTo(Offer::class);

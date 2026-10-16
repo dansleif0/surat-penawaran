@@ -21,10 +21,10 @@
             </div>
         </div>
 
-        {{-- Kartu Pencarian & Filter Invoice Gabungan --}}
+        {{-- Kartu Pencarian & Filter Invoice --}}
         <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-6">
             <form action="{{ route('invoice.histori') }}" method="GET" class="flex flex-col md:flex-row items-end justify-between gap-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full md:w-3/4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full md:w-5/6">
                     {{-- Input Pencarian --}}
                     <div class="md:col-span-2">
                         <label for="search" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Pencarian</label>
@@ -36,11 +36,21 @@
                         </div>
                     </div>
 
-                    {{-- Dropdown Filter Invoice Gabungan --}}
+                    {{-- Dropdown Filter Tipe / Jenis Invoice --}}
                     <div>
-                        <label for="status_gabungan" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Filter Tipe Invoice</label>
+                        <label for="jenis" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Filter Tipe Invoice</label>
+                        <select name="jenis" id="jenis" onchange="this.form.submit()" class="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors bg-white">
+                            <option value="">Semua Tipe</option>
+                            <option value="produk" {{ ($jenis ?? '') == 'produk' ? 'selected' : '' }}>Invoice Produk</option>
+                            <option value="proyek" {{ ($jenis ?? '') == 'proyek' ? 'selected' : '' }}>Invoice Proyek</option>
+                        </select>
+                    </div>
+
+                    {{-- Dropdown Filter Format / Status Gabungan --}}
+                    <div>
+                        <label for="status_gabungan" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Format Invoice</label>
                         <select name="status_gabungan" id="status_gabungan" onchange="this.form.submit()" class="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors bg-white">
-                            <option value="">Semua Invoice</option>
+                            <option value="">Semua Format</option>
                             <option value="single" {{ ($status_gabungan ?? '') == 'single' ? 'selected' : '' }}>Invoice Biasa (Single)</option>
                             <option value="merge" {{ ($status_gabungan ?? '') == 'merge' ? 'selected' : '' }}>Invoice Gabungan (Merge)</option>
                         </select>
@@ -49,7 +59,7 @@
 
                 {{-- Action Buttons --}}
                 <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-                    @if(request('search') || request('status_gabungan'))
+                    @if(request('search') || request('jenis') || request('status_gabungan'))
                         <a href="{{ route('invoice.histori') }}" class="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors border border-red-200">
                             Reset Filter
                         </a>
@@ -83,6 +93,7 @@
                         </th>
                         <th scope="col" class="px-6 py-3">Tanggal Invoice</th>
                         <th scope="col" class="px-6 py-3">No. Invoice</th>
+                        <th scope="col" class="px-6 py-3 text-center">Jenis</th>
                         <th scope="col" class="px-6 py-3">Nama Klien</th>
                         <th scope="col" class="px-6 py-3">No. Surat Penawaran</th>
                         <th scope="col" class="px-6 py-3 text-right">Total Tagihan</th>
@@ -111,6 +122,19 @@
                             </div>
                         </td>
 
+                        {{-- JENIS INVOICE --}}
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
+                            @if($invoice->jenis == 'produk')
+                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded border border-blue-400">
+                                    Produk
+                                </span>
+                            @else
+                                <span class="bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-0.5 rounded border border-gray-500">
+                                    Proyek
+                                </span>
+                            @endif
+                        </td>
+
                         <td class="px-6 py-4 font-medium text-gray-800">
                             {{ $invoice->nama_klien }}
                         </td>
@@ -125,7 +149,11 @@
                                     $tahun = $tglOffer->format('Y');
                                 @endphp
                                 <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded-full border border-gray-300">
-                                    00{{ $invoice->offer->id }}/SP/TGI-1/{{ $romawi }}/{{ $tahun }}
+                                    @if($invoice->offer->jenis_penawaran === 'produk')
+                                        {{ str_pad($invoice->offer->id, 3, '0', STR_PAD_LEFT) }}/SP-PRODUK/TGI/{{ $romawi }}/{{ $tahun }}
+                                    @else
+                                        00{{ $invoice->offer->id }}/SP/TGI-1/{{ $romawi }}/{{ $tahun }}
+                                    @endif
                                 </span>
                             @else
                                 <span class="text-red-500 italic">-</span>
@@ -173,13 +201,6 @@
                                             Print Invoice
                                         </a>
 
-                                        <a href="{{ route('invoice.print_surat_jalan', $invoice->id) }}" target="_blank" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700" role="menuitem">
-                                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            Print Surat Jalan
-                                        </a>
-
                                         <a href="{{ route('invoice.edit', $invoice->id) }}" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700" role="menuitem">
                                             <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -204,7 +225,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
                             <div class="flex flex-col items-center justify-center">
                                 <svg class="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
