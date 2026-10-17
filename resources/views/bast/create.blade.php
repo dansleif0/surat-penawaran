@@ -147,7 +147,7 @@
                 <p class="mt-6">Selanjutnya secara bersama-sama PIHAK PERTAMA dan PIHAK KEDUA dalam hal ini disebut <strong>PARA PIHAK</strong>.</p>
 
                 <p>PARA PIHAK sepakat melaksanakan serah terima
-                    <input type="text" name="deskripsi_pekerjaan" placeholder="Contoh: pekerjaan pengecatan dinding Exterior..." class="border-b border-gray-400 w-1/2 px-1 focus:outline-none" required>
+                    <input type="text" name="deskripsi_pekerjaan" value="{{ old('deskripsi_pekerjaan', 'apply dan supply pengecatan') }}" class="border-b border-gray-400 w-1/2 px-1 focus:outline-none font-semibold text-gray-800" required>
                     yang telah diselesaikan pihak pertama di
                     <span class="font-semibold">{{ $offer->nama_klien }}</span>
                     dengan ketentuan sebagai berikut:

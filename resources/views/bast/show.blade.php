@@ -119,7 +119,7 @@ $tahun = $date->format('Y');
 
             <p class="mt-6">Selanjutnya secara bersama-sama PIHAK PERTAMA dan PIHAK KEDUA dalam hal ini disebut <strong>PARA PIHAK</strong>.</p>
 
-            <p>PARA PIHAK sepakat melaksanakan serah terima <strong>{{ $bast->deskripsi_pekerjaan }}</strong> dengan ketentuan sebagai berikut:</p>
+            <p>PARA PIHAK sepakat melaksanakan serah terima <strong>{{ $bast->deskripsi_pekerjaan }}</strong> yang telah diselesaikan pihak pertama di <strong>{{ $bast->pihak_kedua_nama }}</strong> dengan ketentuan sebagai berikut:</p>
 
             <div class="space-y-4 mt-4">
                 <div>
