@@ -18,6 +18,8 @@ class InvoiceController extends Controller
         $status_gabungan = $request->input('status_gabungan');
         $jenis = $request->input('jenis') ?? $request->input('tipe_invoice');
 
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+
         $query = Invoice::with(['offer']);
 
         if ($search) {
@@ -56,13 +58,25 @@ class InvoiceController extends Controller
             }
         }
 
-        $invoices = $query->latest()->paginate(15);
+        // Untuk non-admin (Driver & Staff Gudang): invoice ber-flag persiapan muncul paling atas
+        if (!$isAdmin) {
+            $query->orderByRaw('is_persiapan DESC, persiapan_at DESC, created_at DESC');
+            $invoices = $query->paginate(15);
+        } else {
+            $invoices = $query->latest()->paginate(15);
+        }
+
+        // Hitung total invoice yang belum dikonfirmasi (untuk badge notifikasi)
+        $persiapanCount = Invoice::where('is_persiapan', true)
+            ->whereNull('persiapan_confirmed_at')
+            ->count();
 
         return view('invoice.histori', [
-            'invoices' => $invoices,
-            'search' => $search ?? '',
-            'status_gabungan' => $status_gabungan ?? '',
-            'jenis' => $jenis ?? ''
+            'invoices'         => $invoices,
+            'search'           => $search ?? '',
+            'status_gabungan'  => $status_gabungan ?? '',
+            'jenis'            => $jenis ?? '',
+            'persiapanCount'   => $persiapanCount,
         ]);
     }
 
@@ -583,7 +597,7 @@ class InvoiceController extends Controller
                 if (!empty($itemData['keterangan'])) {
                     $invoice->payments()->create([
                         'keterangan' => $itemData['keterangan'],
-                        'jumlah' => $itemData['jumlah'] ?? 0,
+                        'jumlah'     => $itemData['jumlah'] ?? 0,
                     ]);
                 }
             }
@@ -591,4 +605,124 @@ class InvoiceController extends Controller
 
         return redirect()->route('invoice.histori')->with('success', 'Invoice gabungan (Piutang Statement) berhasil disimpan!');
     }
+
+    /**
+     * Admin menandai satu atau beberapa invoice sebagai "Persiapkan".
+     * Invoice yang ditandai akan muncul paling atas di view Driver & Staff Gudang
+     * dengan badge notifikasi orange.
+     */
+    public function persiapkan(Request $request)
+    {
+        $request->validate([
+            'selected_invoices'   => 'required|array|min:1',
+            'selected_invoices.*' => 'integer|exists:invoices,id',
+        ]);
+
+        $ids = $request->input('selected_invoices');
+
+        Invoice::whereIn('id', $ids)->update([
+            'is_persiapan'              => true,
+            'persiapan_at'              => now(),
+            'persiapan_confirmed_at'    => null, // Reset konfirmasi saat dipersiapkan ulang
+        ]);
+
+        $count = count($ids);
+        return redirect()->route('invoice.histori')
+            ->with('success', "{$count} invoice berhasil ditandai sebagai \"Persiapkan\". Driver dan Staff Gudang akan menerima notifikasi.");
+    }
+
+    /**
+     * Super User / Admin membatalkan status "Persiapkan" pada satu invoice.
+     */
+    public function batalPersiapkan(Invoice $invoice)
+    {
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Hanya Super Admin yang dapat membatalkan status persiapan.');
+        }
+
+        $invoice->update([
+            'is_persiapan'           => false,
+            'persiapan_at'           => null,
+            'persiapan_confirmed_at' => null,
+        ]);
+
+        return redirect()->route('invoice.histori')
+            ->with('success', "Status persiapan untuk invoice {$invoice->no_invoice} berhasil dibatalkan.");
+    }
+
+    /**
+     * Super User / Admin membatalkan status "Persiapkan" pada beberapa invoice sekaligus (bulk).
+     */
+    public function batalPersiapkanBulk(Request $request)
+    {
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Hanya Super Admin yang dapat membatalkan status persiapan.');
+        }
+
+        $request->validate([
+            'selected_invoices'   => 'required|array|min:1',
+            'selected_invoices.*' => 'integer|exists:invoices,id',
+        ]);
+
+        $ids = $request->input('selected_invoices');
+
+        Invoice::whereIn('id', $ids)->update([
+            'is_persiapan'           => false,
+            'persiapan_at'           => null,
+            'persiapan_confirmed_at' => null,
+        ]);
+
+        $count = count($ids);
+        return redirect()->route('invoice.histori')
+            ->with('success', "Status persiapan untuk {$count} invoice berhasil dibatalkan.");
+    }
+
+    /**
+     * Staff Gudang mengkonfirmasi bahwa invoice yang dipersiapkan sudah diterima/diproses.
+     */
+    public function konfirmasiPersiapan(Invoice $invoice)
+    {
+        // Hanya Staff Gudang yang dapat mengkonfirmasi
+        if (!auth()->check() || auth()->user()->role !== 'staff_gudang') {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Hanya Staff Gudang yang dapat mengkonfirmasi persiapan.');
+        }
+
+        if (!$invoice->is_persiapan) {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Invoice ini tidak dalam status Persiapan.');
+        }
+
+        $invoice->update([
+            'is_persiapan'           => false,
+            'persiapan_confirmed_at' => now(),
+        ]);
+
+        return redirect()->route('invoice.histori')
+            ->with('success', "Invoice {$invoice->no_invoice} telah dikonfirmasi. Status persiapan selesai.");
+    }
+
+    /**
+     * Staff Gudang mengkonfirmasi semua notifikasi persiapan sekaligus.
+     */
+    public function konfirmasiSemuaPersiapan(Request $request)
+    {
+        if (!auth()->check() || auth()->user()->role !== 'staff_gudang') {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Hanya Staff Gudang yang dapat mengkonfirmasi persiapan.');
+        }
+
+        $count = Invoice::where('is_persiapan', true)->count();
+
+        Invoice::where('is_persiapan', true)->update([
+            'is_persiapan'           => false,
+            'persiapan_confirmed_at' => now(),
+        ]);
+
+        return redirect()->route('invoice.histori')
+            ->with('success', "Semua notifikasi persiapan ({$count} invoice) telah berhasil dikonfirmasi.");
+    }
 }
+

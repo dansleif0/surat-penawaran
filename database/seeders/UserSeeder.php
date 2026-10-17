@@ -13,24 +13,48 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Cek apakah user admin utama sudah ada
-        if (!User::where('username', 'admin')->exists()) {
-            User::create([
+        // 1. Admin Utama
+        User::updateOrCreate(
+            ['username' => 'managerkda'],
+            [
                 'name' => 'Admin Tasniem',
-                'username' => 'managerkda',           // Username untuk login
-                'email' => 'admin@tasniem.com',  // Email (tetap diisi untuk kebutuhan sistem/notifikasi)
-                'password' => Hash::make('123456'), // Password
-            ]);
-        }
+                'role' => 'admin',
+                'email' => 'admin@tasniem.com',
+                'password' => Hash::make('123456'),
+            ]
+        );
 
-        // Contoh user kedua (Opsional)
-        if (!User::where('username', 'staff')->exists()) {
-            User::create([
+        // 2. Staff Gudang (Indra)
+        User::updateOrCreate(
+            ['username' => 'Indra'],
+            [
+                'name' => 'Indra',
+                'role' => 'staff_gudang',
+                'email' => 'indra@tasniem.com',
+                'password' => Hash::make('123456'),
+            ]
+        );
+
+        // 3. Driver
+        User::updateOrCreate(
+            ['username' => 'driver'],
+            [
+                'name' => 'Driver',
+                'role' => 'driver',
+                'email' => 'driver@tasniem.com',
+                'password' => Hash::make('123456'),
+            ]
+        );
+
+        // 4. Staff Gudang (staff lama)
+        User::updateOrCreate(
+            ['username' => 'staff'],
+            [
                 'name' => 'Staff Gudang',
-                'username' => 'staff',
+                'role' => 'staff_gudang',
                 'email' => 'staff@tasniem.com',
                 'password' => Hash::make('staff123'),
-            ]);
-        }
+            ]
+        );
     }
 }

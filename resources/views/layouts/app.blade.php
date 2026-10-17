@@ -67,6 +67,15 @@
         .sidebar-gradient {
             background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
         }
+
+        /* Animasi ping lambat untuk badge notifikasi persiapan di sidebar */
+        @keyframes ping-slow {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%       { transform: scale(1.2); opacity: 0.85; }
+        }
+        .animate-ping-slow {
+            animation: ping-slow 1.6s ease-in-out infinite;
+        }
     </style>
 </head>
 
@@ -108,81 +117,113 @@
                     <span class="font-medium">Dashboard</span>
                 </a>
 
-                <div class="nav-divider"></div>
+                @if(Auth::check() && Auth::user()->role === 'admin')
+                    <div class="nav-divider"></div>
 
-                <a href="{{ route('harga.index') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all duration-200 group">
-                    <span class="mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                    </span>
-                    <span class="font-medium">Harga Produk</span>
-                </a>
+                    <a href="{{ route('harga.index') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all duration-200 group">
+                        <span class="mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </span>
+                        <span class="font-medium">Harga Produk</span>
+                    </a>
 
-                <div x-data="{ open: false }">
-                    <button @click="open = !open" onclick="toggleSubmenu('penawaran-submenu', 'penawaran-icon')"
-                        class="w-full flex items-center justify-between px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all group focus:outline-none">
-                        <div class="flex items-center">
-                            <span class="mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </span>
-                            <span class="font-medium">Buat Penawaran</span>
+                    <div x-data="{ open: false }">
+                        <button @click="open = !open" onclick="toggleSubmenu('penawaran-submenu', 'penawaran-icon')"
+                            class="w-full flex items-center justify-between px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all group focus:outline-none">
+                            <div class="flex items-center">
+                                <span class="mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </span>
+                                <span class="font-medium">Buat Penawaran</span>
+                            </div>
+                            <svg id="penawaran-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="penawaran-submenu" class="submenu space-y-1">
+                            <a href="{{ route('penawaran.create_combined') }}" class="flex items-center px-4 py-2.5 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform tracking-wide italic">
+                                <span class="mr-2 text-blue-500">•</span> Penawaran Proyek
+                            </a>
+                            <a href="{{ route('penawaran.create_product') }}" class="flex items-center px-4 py-2.5 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform tracking-wide italic">
+                                <span class="mr-2 text-blue-500">•</span> Penawaran Produk
+                            </a>
                         </div>
-                        <svg id="penawaran-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <div id="penawaran-submenu" class="submenu space-y-1">
-                        <a href="{{ route('penawaran.create_combined') }}" class="flex items-center px-4 py-2.5 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform tracking-wide italic">
-                            <span class="mr-2 text-blue-500">•</span> Penawaran Proyek
-                        </a>
-                        <a href="{{ route('penawaran.create_product') }}" class="flex items-center px-4 py-2.5 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform tracking-wide italic">
-                            <span class="mr-2 text-blue-500">•</span> Penawaran Produk
-                        </a>
                     </div>
-                </div>
 
-                <div x-data="{ open: false }" class="mt-4">
-                    <button @click="open = !open" onclick="toggleSubmenu('histori-submenu', 'histori-icon')"
-                        class="w-full flex items-center justify-between px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all group focus:outline-none">
-                        <div class="flex items-center">
-                            <span class="mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </span>
-                            <span class="font-medium">Histori Data</span>
+                    <div x-data="{ open: false }" class="mt-4">
+                        <button @click="open = !open" onclick="toggleSubmenu('histori-submenu', 'histori-icon')"
+                            class="w-full flex items-center justify-between px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all group focus:outline-none">
+                            <div class="flex items-center">
+                                <span class="mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </span>
+                                <span class="font-medium">Histori Data</span>
+                            </div>
+                            <svg id="histori-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        <div id="histori-submenu" class="submenu space-y-1">
+                            {{-- Histori Rekapan (Tambahan Baru) --}}
+                            <a href="{{ route('recap.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
+                                <span class="mr-2 text-emerald-500">•</span> Histori Rekapan Biaya
+                            </a>
+
+                            <a href="{{ route('histori.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
+                                <span class="mr-2 text-blue-500">•</span> Histori Penawaran
+                            </a>
+
+                            <a href="{{ route('invoice.histori') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
+                                <span class="mr-2 text-blue-500">•</span> Histori Invoice
+                            </a>
+
+                            <a href="{{ route('bast.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
+                                <span class="mr-2 text-blue-500">•</span> Histori BAST
+                            </a>
+
+                            {{-- Sementara disembunyikan: Histori SPK --}}
+                            {{-- <a href="{{ route('skp.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
+                                <span class="mr-2 text-blue-500">•</span> Histori SPK
+                            </a> --}}
                         </div>
-                        <svg id="histori-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-
-                    <div id="histori-submenu" class="submenu space-y-1">
-                        {{-- Histori Rekapan (Tambahan Baru) --}}
-                        <a href="{{ route('recap.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
-                            <span class="mr-2 text-emerald-500">•</span> Histori Rekapan Biaya
-                        </a>
-
-                        <a href="{{ route('histori.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
-                            <span class="mr-2 text-blue-500">•</span> Histori Penawaran
-                        </a>
-
-                        <a href="{{ route('invoice.histori') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
-                            <span class="mr-2 text-blue-500">•</span> Histori Invoice
-                        </a>
-
-                        <a href="{{ route('bast.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
-                            <span class="mr-2 text-blue-500">•</span> Histori BAST
-                        </a>
-
-                        <a href="{{ route('skp.index') }}" class="flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:translate-x-1 transition-transform italic">
-                            <span class="mr-2 text-blue-500">•</span> Histori SPK
-                        </a>
                     </div>
-                </div>
+                @else
+                    {{-- Menu Khusus Driver & Staff Gudang --}}
+                    <div class="nav-divider"></div>
+
+                    @php
+                        $sidebarPersiapanCount = \App\Models\Invoice::where('is_persiapan', true)
+                            ->whereNull('persiapan_confirmed_at')
+                            ->count();
+                    @endphp
+
+                    <a href="{{ route('invoice.histori') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all duration-200 group {{ request()->routeIs('invoice.*') ? 'bg-slate-700/50 text-white' : '' }}">
+                        <span class="relative mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-blue-500 transition-colors {{ request()->routeIs('invoice.*') ? 'bg-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {{-- Badge orange jika ada notifikasi persiapan --}}
+                            @if($sidebarPersiapanCount > 0)
+                                <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 bg-orange-500 rounded-full text-white text-[9px] font-black ring-2 ring-slate-900 animate-ping-slow">
+                                    {{ $sidebarPersiapanCount > 9 ? '9+' : $sidebarPersiapanCount }}
+                                </span>
+                            @endif
+                        </span>
+                        <span class="font-medium flex-1">Histori Invoice</span>
+                        @if($sidebarPersiapanCount > 0)
+                            <span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                {{ $sidebarPersiapanCount }} baru
+                            </span>
+                        @endif
+                    </a>
+                @endif
             </nav>
 
             <div class="p-4 m-4 bg-slate-900/50 rounded-2xl border border-slate-700/50">
@@ -192,7 +233,7 @@
                     </div>
                     <div class="text-sm flex-1 min-w-0">
                         <p class="font-bold text-white truncate">{{ Auth::user()->name ?? 'Guest User' }}</p>
-                        <p class="text-[10px] text-blue-400 font-semibold uppercase tracking-tighter">Super Admin</p>
+                        <p class="text-[10px] text-blue-400 font-semibold uppercase tracking-tighter">{{ Auth::user()->role_label ?? 'Super Admin' }}</p>
                     </div>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
@@ -208,6 +249,30 @@
 
         <main class="flex-1 overflow-x-auto overflow-y-auto bg-[#f8fafc] p-8 z-10 relative">
             <div class="max-w-7xl mx-auto">
+                @if(session('error'))
+                    <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span class="text-sm font-semibold">{{ session('error') }}</span>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-700 text-lg font-bold leading-none">&times;</button>
+                    </div>
+                @endif
+
+                @if(session('success'))
+                    <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-sm font-semibold">{{ session('success') }}</span>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-700 text-lg font-bold leading-none">&times;</button>
+                    </div>
+                @endif
+
                 @yield('content')
             </div>
         </main>

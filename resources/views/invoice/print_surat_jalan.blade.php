@@ -155,9 +155,11 @@
         <a href="{{ route('invoice.histori') }}" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded shadow-lg transition text-sm flex items-center gap-1.5">
             &larr; Kembali ke Histori
         </a>
+        @if(Auth::check() && Auth::user()->role === 'admin')
         <a href="{{ route('invoice.edit', $invoice->id) }}" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded shadow-lg transition text-sm flex items-center gap-1.5">
             ✏️ Edit Invoice
         </a>
+        @endif
         <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center gap-2 transition text-sm">
             <span>🖨️</span> Cetak Halaman
         </button>

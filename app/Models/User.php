@@ -20,9 +20,22 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'username',
+        'role',
         'email',
         'password',
     ];
+
+    /**
+     * Get label for user's actor status / role.
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        return match($this->role) {
+            'staff_gudang' => 'Staff Gudang',
+            'driver' => 'Driver',
+            default => 'Super Admin',
+        };
+    }
 
     /**
      * The attributes that should be hidden for serialization.
