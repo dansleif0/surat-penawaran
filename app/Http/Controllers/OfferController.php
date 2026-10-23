@@ -13,6 +13,7 @@ class OfferController extends Controller
     {
         $search = $request->input('search');
         $jenis = $request->input('jenis');
+        $status = $request->input('status');
         $query = Offer::query();
 
         if ($search) {
@@ -35,8 +36,18 @@ class OfferController extends Controller
             }
         }
 
-        $offers = $query->latest()->paginate(15);
-        return view('histori.index', compact('offers', 'search', 'jenis'));
+        if ($status) {
+            if ($status === 'finished') {
+                $query->whereHas('invoices');
+            } elseif ($status === 'expired') {
+                $query->doesntHave('invoices')->where('created_at', '<', now()->subMonth());
+            } elseif ($status === 'in_progress') {
+                $query->doesntHave('invoices')->where('created_at', '>=', now()->subMonth());
+            }
+        }
+
+        $offers = $query->with(['items', 'jasaItems'])->withExists('invoices')->latest()->paginate(15);
+        return view('histori.index', compact('offers', 'search', 'jenis', 'status'));
     }
 
     public function create_combined()
@@ -84,6 +95,7 @@ class OfferController extends Controller
                 'total_keseluruhan'     => $totalProduk + $totalJasa,
                 'pisah_kriteria_total'  => $request->has('pisah_kriteria_total') ? 1 : 0,
                 'hilangkan_grand_total' => $request->has('hilangkan_grand_total') ? 1 : 0,
+                'tampilkan_detail'      => $request->has('tampilkan_detail') ? 1 : 0,
                 'jenis_penawaran'       => 'jasa',
             ]);
 
@@ -161,6 +173,7 @@ class OfferController extends Controller
                 'pisah_kriteria_total'  => $request->has('pisah_kriteria_total') ? 1 : 0,
                 'hilangkan_grand_total' => $request->has('hilangkan_grand_total') ? 1 : 0,
                 'opsi_paket'            => $request->has('opsi_paket') ? 1 : 0,
+                'tampilkan_detail'      => $request->has('tampilkan_detail') ? 1 : 0,
                 'jenis_penawaran'       => $offer->jenis_penawaran ?? 'jasa',
             ];
 
@@ -219,7 +232,7 @@ class OfferController extends Controller
     // ... method lainnya (show, edit, destroy, print) tetap sama ...
     public function show($id)
     {
-        $offer = Offer::with(['items', 'jasaItems'])->findOrFail($id);
+        $offer = Offer::with(['items', 'jasaItems'])->withExists('invoices')->findOrFail($id);
         $view = ($offer->jenis_penawaran == 'produk') ? 'histori.show_product' : 'histori.show';
         return view($view, compact('offer'));
     }

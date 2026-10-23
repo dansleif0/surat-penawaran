@@ -192,6 +192,7 @@ class ProductController extends Controller
                 'pisah_kriteria_total'  => $request->has('pisah_kriteria_total') ? 1 : 0,
                 'hilangkan_grand_total' => $request->has('hilangkan_grand_total') ? 1 : 0,
                 'opsi_paket'            => $request->has('opsi_paket') ? 1 : 0,
+                'tampilkan_detail'      => $request->has('tampilkan_detail') ? 1 : 0,
                 'jenis_penawaran'       => 'proyek', // Tambahkan penanda jenis jika perlu
             ]);
 

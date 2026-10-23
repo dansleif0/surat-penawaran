@@ -27,6 +27,7 @@ class Offer extends Model
         'pisah_kriteria_total',
         'hilangkan_grand_total',
         'opsi_paket',
+        'tampilkan_detail',
         'jenis_penawaran',
         'total_keseluruhan',
     ];
@@ -49,5 +50,37 @@ class Offer extends Model
     public function jasaItems()
     {
         return $this->hasMany(OfferJasa::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    public function getStatusAttribute(): string
+    {
+        $hasInvoice = isset($this->invoices_exists)
+            ? (bool)$this->invoices_exists
+            : ($this->relationLoaded('invoices') ? $this->invoices->isNotEmpty() : $this->invoices()->exists());
+
+        if ($hasInvoice) {
+            return 'Finished';
+        }
+
+        if ($this->created_at && $this->created_at->copy()->addMonth()->isPast()) {
+            return 'Expired';
+        }
+
+        return 'In Progress';
+    }
+
+    public function getStatusPenawaranAttribute(): string
+    {
+        return $this->status;
     }
 }

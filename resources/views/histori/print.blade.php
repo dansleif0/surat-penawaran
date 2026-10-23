@@ -173,6 +173,7 @@
         @php
         $isSplit = $offer->pisah_kriteria_total;
         $showTotal = !$offer->hilangkan_grand_total;
+        $showDetail = (bool) $offer->tampilkan_detail;
         $totalJasa = $offer->jasaItems->sum('harga_jasa');
 
         $exteriorItems = collect();
@@ -199,6 +200,172 @@
         <section class="mt-8 sans text-sm">
             <div class="w-full">
 
+                {{-- JIKA TAMPILKAN DETAIL = FALSE (FORMAT RANGKUMAN BARU) --}}
+                @if(!$showDetail)
+
+                    @if($isSplit)
+                        {{-- 1. EXTERIOR RANGKUMAN --}}
+                        @if($exteriorItems->isNotEmpty())
+                        @php
+                            $extDistinctProds = $exteriorItems->pluck('nama_produk')->unique()->filter()->values();
+                            $extHasSingleProduct = ($extDistinctProds->count() === 1);
+                            $extSingleProd = $extHasSingleProduct ? $extDistinctProds->first() : null;
+                            $extSinglePrice = $extHasSingleProduct ? $exteriorItems->first()->harga_per_m2 : null;
+
+                            $extBrands = $exteriorItems->map(function($item) {
+                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
+                            })->unique()->filter()->values();
+                            $extBrandText = $extBrands->isNotEmpty() ? $extBrands->implode(', ') : 'Jotun';
+                        @endphp
+                        <div class="mb-8 page-break-inside-avoid">
+                            <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Exterior</h4>
+                            <table class="w-full text-left border-collapse mb-4">
+                                <thead class="bg-gray-200 text-black">
+                                    <tr>
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Area Pekerjaan</th>
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Nama Brand</th>
+                                        @if($extHasSingleProduct)
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Produk</th>
+                                        @endif
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Volume/M²</th>
+                                        @if($extHasSingleProduct)
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Harga Satuan</th>
+                                        @endif
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-500">
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle font-medium">Total Pekerjaan Exterior</td>
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $extBrandText }}</td>
+                                        @if($extHasSingleProduct)
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $extSingleProd }}</td>
+                                        @endif
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none text-right align-middle">{{ $exteriorItems->sum('volume') + 0 }}</td>
+                                        @if($extHasSingleProduct)
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($extSinglePrice, 0, ',', '.') }}</span></div>
+                                        </td>
+                                        @endif
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap font-bold align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalExterior, 0, ',', '.') }}</span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        @endif
+
+                        {{-- 2. INTERIOR RANGKUMAN --}}
+                        @if($interiorItems->isNotEmpty())
+                        @php
+                            $intDistinctProds = $interiorItems->pluck('nama_produk')->unique()->filter()->values();
+                            $intHasSingleProduct = ($intDistinctProds->count() === 1);
+                            $intSingleProd = $intHasSingleProduct ? $intDistinctProds->first() : null;
+                            $intSinglePrice = $intHasSingleProduct ? $interiorItems->first()->harga_per_m2 : null;
+
+                            $intBrands = $interiorItems->map(function($item) {
+                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
+                            })->unique()->filter()->values();
+                            $intBrandText = $intBrands->isNotEmpty() ? $intBrands->implode(', ') : 'Jotun';
+                        @endphp
+                        <div class="mb-8 page-break-inside-avoid">
+                            <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Interior</h4>
+                            <table class="w-full text-left border-collapse mb-4">
+                                <thead class="bg-gray-200 text-black">
+                                    <tr>
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Area Pekerjaan</th>
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Nama Brand</th>
+                                        @if($intHasSingleProduct)
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Produk</th>
+                                        @endif
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Volume/M²</th>
+                                        @if($intHasSingleProduct)
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Harga Satuan</th>
+                                        @endif
+                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-500">
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle font-medium">Total Pekerjaan Interior</td>
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $intBrandText }}</td>
+                                        @if($intHasSingleProduct)
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $intSingleProd }}</td>
+                                        @endif
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none text-right align-middle">{{ $interiorItems->sum('volume') + 0 }}</td>
+                                        @if($intHasSingleProduct)
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($intSinglePrice, 0, ',', '.') }}</span></div>
+                                        </td>
+                                        @endif
+                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap font-bold align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalInterior, 0, ',', '.') }}</span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        @endif
+
+                    @else
+                        {{-- 3. NON-SPLIT RANGKUMAN --}}
+                        @if($offer->items->isNotEmpty())
+                        @php
+                            $allItems = $offer->items;
+                            $allDistinctProds = $allItems->pluck('nama_produk')->unique()->filter()->values();
+                            $allHasSingleProduct = ($allDistinctProds->count() === 1);
+                            $allSingleProd = $allHasSingleProduct ? $allDistinctProds->first() : null;
+                            $allSinglePrice = $allHasSingleProduct ? $allItems->first()->harga_per_m2 : null;
+
+                            $allBrands = $allItems->map(function($item) {
+                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
+                            })->unique()->filter()->values();
+                            $allBrandText = $allBrands->isNotEmpty() ? $allBrands->implode(', ') : 'Jotun';
+                            $allTotal = $allItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
+                        @endphp
+                        <table class="w-full text-left border-collapse page-break-inside-avoid mb-6">
+                            <thead class="bg-gray-200 text-black">
+                                <tr>
+                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Area Pekerjaan</th>
+                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Nama Brand</th>
+                                    @if($allHasSingleProduct)
+                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Produk</th>
+                                    @endif
+                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Volume/M²</th>
+                                    @if($allHasSingleProduct)
+                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Harga Satuan</th>
+                                    @endif
+                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-500">
+                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle font-medium">Total Pekerjaan</td>
+                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $allBrandText }}</td>
+                                    @if($allHasSingleProduct)
+                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $allSingleProd }}</td>
+                                    @endif
+                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none text-right align-middle">{{ $allItems->sum('volume') + 0 }}</td>
+                                    @if($allHasSingleProduct)
+                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allSinglePrice, 0, ',', '.') }}</span></div>
+                                    </td>
+                                    @endif
+                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap font-bold align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allTotal, 0, ',', '.') }}</span></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        @endif
+                    @endif
+
+                @else
+                {{-- JIKA TAMPILKAN DETAIL = TRUE (FORMAT RINCIAN AREA PEKERJAAN) --}}
                 {{-- KASUS 1: SPLIT --}}
                 @if($isSplit)
 
@@ -355,6 +522,8 @@
                         @endforeach
                     </tbody>
                 </table>
+                @endif
+
                 @endif
 
                 {{-- TABEL JASA (DENGAN TOTAL) --}}

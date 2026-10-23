@@ -3,10 +3,28 @@
 @section('content')
 <div class="container mx-auto my-12 px-4">
 
-    <div class="max-w-4xl mx-auto mb-4 flex justify-between gap-2 print:hidden">
-        <a href="{{ route('histori.index') }}" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded hover:bg-gray-300 transition-colors">
-            &larr; Kembali
-        </a>
+    <div class="max-w-4xl mx-auto mb-4 flex justify-between items-center gap-2 print:hidden">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('histori.index') }}" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded hover:bg-gray-300 transition-colors">
+                &larr; Kembali
+            </a>
+            @if($offer->status === 'Finished')
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Status: Finished
+                </span>
+            @elseif($offer->status === 'Expired')
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    Status: Expired
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                    Status: In Progress
+                </span>
+            @endif
+        </div>
         <div class="flex gap-2">
             <a href="{{ route('histori.print', $offer->id) }}" target="_blank" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors shadow-sm inline-flex items-center gap-2">
                 🖨️ Print Surat (PDF)
@@ -74,6 +92,7 @@
         @php
         $isSplit = $offer->pisah_kriteria_total;
         $showTotal = !$offer->hilangkan_grand_total;
+        $showDetail = (bool) $offer->tampilkan_detail;
 
         // Hitung Total Jasa
         $totalJasa = $offer->jasaItems->sum('harga_jasa');
@@ -84,17 +103,17 @@
         $totalInterior = 0;
 
         if ($isSplit) {
-        $exteriorItems = $offer->items->filter(function($item) {
-        $prod = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
-        return $prod && $prod->kriteria == 'Exterior';
-        });
-        $totalExterior = $exteriorItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
+            $exteriorItems = $offer->items->filter(function($item) {
+                $prod = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                return $prod && $prod->kriteria == 'Exterior';
+            });
+            $totalExterior = $exteriorItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
 
-        $interiorItems = $offer->items->filter(function($item) {
-        $prod = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
-        return !$prod || $prod->kriteria != 'Exterior';
-        });
-        $totalInterior = $interiorItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
+            $interiorItems = $offer->items->filter(function($item) {
+                $prod = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                return !$prod || $prod->kriteria != 'Exterior';
+            });
+            $totalInterior = $interiorItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
         }
         $globalIndex = 0;
         @endphp
@@ -102,162 +121,331 @@
         <section class="mt-8">
             <div class="w-full overflow-x-auto">
 
-                {{-- KASUS 1: SPLIT --}}
-                @if($isSplit)
+                {{-- JIKA TAMPILKAN DETAIL = FALSE (FORMAT RANGKUMAN BARU) --}}
+                @if(!$showDetail)
 
-                {{-- EXTERIOR --}}
-                @if($exteriorItems->isNotEmpty())
-                <div class="mb-8 page-break-inside-avoid">
-                    <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Exterior</h4>
-                    <table class="w-full text-left border-collapse mb-4">
-                        <thead class="bg-gray-800 text-white">
-                            <tr>
-                                @if($offer->opsi_paket)
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Opsi Paket</th>
-                                @endif
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[28%] whitespace-nowrap align-middle">Area Pekerjaan</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Nama Brand</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[20%] whitespace-nowrap align-middle">Produk</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[10%] whitespace-nowrap align-middle">Volume/M²</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Harga Satuan</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($exteriorItems as $item)
-                            <tr class="border-b border-gray-500">
-                                @if($offer->opsi_paket)
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">Paket {{ chr(65 + $globalIndex) }}</td>
-                                @php $globalIndex++; @endphp
-                                @endif
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->area_dinding }}</td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
-                                    @php $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first(); @endphp
-                                    {{ $p->performa ?? '-' }}
-                                </td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->nama_produk }}</td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none text-right whitespace-nowrap align-middle">{{ $item->volume }}</td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->harga_per_m2, 0, ',', '.') }}</span></div>
-                                </td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap font-medium align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span></div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                        @if($showTotal)
-                        <tfoot>
-                            <tr class="bg-gray-100 font-bold text-gray-800">
-                                <td colspan="{{ $offer->opsi_paket ? 4 : 3 }}" class="py-1 px-1 text-xs text-right uppercase align-middle">Total Exterior</td>
-                                <td class="py-1 px-1 text-xs text-right align-middle">{{ $exteriorItems->sum('volume') + 0 }}</td>
-                                <td class="py-1 px-1 text-xs align-middle"></td>
-                                <td class="py-1 px-1 text-xs text-right whitespace-nowrap align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalExterior, 0, ',', '.') }}</span></div>
-                                </td>
-                            </tr>
-                        </tfoot>
+                    @if($isSplit)
+                        {{-- 1. EXTERIOR RANGKUMAN --}}
+                        @if($exteriorItems->isNotEmpty())
+                        @php
+                            $extDistinctProds = $exteriorItems->pluck('nama_produk')->unique()->filter()->values();
+                            $extHasSingleProduct = ($extDistinctProds->count() === 1);
+                            $extSingleProd = $extHasSingleProduct ? $extDistinctProds->first() : null;
+                            $extSinglePrice = $extHasSingleProduct ? $exteriorItems->first()->harga_per_m2 : null;
+
+                            $extBrands = $exteriorItems->map(function($item) {
+                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
+                            })->unique()->filter()->values();
+                            $extBrandText = $extBrands->isNotEmpty() ? $extBrands->implode(', ') : 'Jotun';
+                        @endphp
+                        <div class="mb-8 page-break-inside-avoid">
+                            <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Exterior</h4>
+                            <table class="w-full text-left border-collapse mb-4">
+                                <thead class="bg-gray-800 text-white">
+                                    <tr>
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Area Pekerjaan</th>
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Nama Brand</th>
+                                        @if($extHasSingleProduct)
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Produk</th>
+                                        @endif
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Volume/M²</th>
+                                        @if($extHasSingleProduct)
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Harga Satuan</th>
+                                        @endif
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-500">
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal font-medium align-middle">Total Pekerjaan Exterior</td>
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $extBrandText }}</td>
+                                        @if($extHasSingleProduct)
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $extSingleProd }}</td>
+                                        @endif
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal text-right align-middle">{{ $exteriorItems->sum('volume') + 0 }}</td>
+                                        @if($extHasSingleProduct)
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($extSinglePrice, 0, ',', '.') }}</span></div>
+                                        </td>
+                                        @endif
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap font-bold align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalExterior, 0, ',', '.') }}</span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         @endif
-                    </table>
-                </div>
-                @endif
 
-                {{-- INTERIOR --}}
-                @if($interiorItems->isNotEmpty())
-                <div class="mb-8 page-break-inside-avoid">
-                    <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Interior</h4>
-                    <table class="w-full text-left border-collapse mb-4">
-                        <thead class="bg-gray-800 text-white">
-                            <tr>
-                                @if($offer->opsi_paket)
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Opsi Paket</th>
-                                @endif
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[28%] whitespace-nowrap align-middle">Area Pekerjaan</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Nama Brand</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[20%] whitespace-nowrap align-middle">Produk</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[10%] whitespace-nowrap align-middle">Volume/M²</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Harga Satuan</th>
-                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($interiorItems as $item)
-                            <tr class="border-b border-gray-500">
-                                @if($offer->opsi_paket)
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">Paket {{ chr(65 + $globalIndex) }}</td>
-                                @php $globalIndex++; @endphp
-                                @endif
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->area_dinding }}</td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
-                                    @php $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first(); @endphp
-                                    {{ $p->performa ?? '-' }}
-                                </td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->nama_produk }}</td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none text-right whitespace-nowrap align-middle">{{ $item->volume }}</td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->harga_per_m2, 0, ',', '.') }}</span></div>
-                                </td>
-                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap font-medium align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span></div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                        @if($showTotal)
-                        <tfoot>
-                            <tr class="bg-gray-100 font-bold text-gray-800">
-                                <td colspan="{{ $offer->opsi_paket ? 4 : 3 }}" class="py-1 px-1 text-xs text-right uppercase align-middle">Total Interior</td>
-                                <td class="py-1 px-1 text-xs text-right align-middle">{{ $interiorItems->sum('volume') + 0 }}</td>
-                                <td class="py-1 px-1 text-xs align-middle"></td>
-                                <td class="py-1 px-1 text-xs text-right whitespace-nowrap align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalInterior, 0, ',', '.') }}</span></div>
-                                </td>
-                            </tr>
-                        </tfoot>
+                        {{-- 2. INTERIOR RANGKUMAN --}}
+                        @if($interiorItems->isNotEmpty())
+                        @php
+                            $intDistinctProds = $interiorItems->pluck('nama_produk')->unique()->filter()->values();
+                            $intHasSingleProduct = ($intDistinctProds->count() === 1);
+                            $intSingleProd = $intHasSingleProduct ? $intDistinctProds->first() : null;
+                            $intSinglePrice = $intHasSingleProduct ? $interiorItems->first()->harga_per_m2 : null;
+
+                            $intBrands = $interiorItems->map(function($item) {
+                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
+                            })->unique()->filter()->values();
+                            $intBrandText = $intBrands->isNotEmpty() ? $intBrands->implode(', ') : 'Jotun';
+                        @endphp
+                        <div class="mb-8 page-break-inside-avoid">
+                            <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Interior</h4>
+                            <table class="w-full text-left border-collapse mb-4">
+                                <thead class="bg-gray-800 text-white">
+                                    <tr>
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Area Pekerjaan</th>
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Nama Brand</th>
+                                        @if($intHasSingleProduct)
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Produk</th>
+                                        @endif
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Volume/M²</th>
+                                        @if($intHasSingleProduct)
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Harga Satuan</th>
+                                        @endif
+                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-500">
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal font-medium align-middle">Total Pekerjaan Interior</td>
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $intBrandText }}</td>
+                                        @if($intHasSingleProduct)
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $intSingleProd }}</td>
+                                        @endif
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal text-right align-middle">{{ $interiorItems->sum('volume') + 0 }}</td>
+                                        @if($intHasSingleProduct)
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($intSinglePrice, 0, ',', '.') }}</span></div>
+                                        </td>
+                                        @endif
+                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap font-bold align-middle">
+                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalInterior, 0, ',', '.') }}</span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         @endif
-                    </table>
-                </div>
-                @endif
 
-                {{-- KASUS 2: DEFAULT --}}
+                    @else
+                        {{-- 3. NON-SPLIT RANGKUMAN --}}
+                        @if($offer->items->isNotEmpty())
+                        @php
+                            $allItems = $offer->items;
+                            $allDistinctProds = $allItems->pluck('nama_produk')->unique()->filter()->values();
+                            $allHasSingleProduct = ($allDistinctProds->count() === 1);
+                            $allSingleProd = $allHasSingleProduct ? $allDistinctProds->first() : null;
+                            $allSinglePrice = $allHasSingleProduct ? $allItems->first()->harga_per_m2 : null;
+
+                            $allBrands = $allItems->map(function($item) {
+                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
+                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
+                            })->unique()->filter()->values();
+                            $allBrandText = $allBrands->isNotEmpty() ? $allBrands->implode(', ') : 'Jotun';
+                            $allTotal = $allItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
+                        @endphp
+                        <table class="w-full text-left border-collapse page-break-inside-avoid mb-4">
+                            <thead class="bg-gray-800 text-white">
+                                <tr>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Area Pekerjaan</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Nama Brand</th>
+                                    @if($allHasSingleProduct)
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Produk</th>
+                                    @endif
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Volume/M²</th>
+                                    @if($allHasSingleProduct)
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Harga Satuan</th>
+                                    @endif
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-500">
+                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal font-medium align-middle">Total Pekerjaan</td>
+                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $allBrandText }}</td>
+                                    @if($allHasSingleProduct)
+                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $allSingleProd }}</td>
+                                    @endif
+                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal text-right align-middle">{{ $allItems->sum('volume') + 0 }}</td>
+                                    @if($allHasSingleProduct)
+                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allSinglePrice, 0, ',', '.') }}</span></div>
+                                    </td>
+                                    @endif
+                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap font-bold align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allTotal, 0, ',', '.') }}</span></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        @endif
+                    @endif
+
                 @else
-                <table class="w-full text-left border-collapse page-break-inside-avoid">
-                    <thead class="bg-gray-800 text-white">
-                        <tr>
-                            @if($offer->opsi_paket)
-                            <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Opsi Paket</th>
+                    {{-- JIKA TAMPILKAN DETAIL = TRUE (FORMAT RINCIAN AREA PEKERJAAN) --}}
+
+                    {{-- KASUS 1: SPLIT --}}
+                    @if($isSplit)
+
+                    {{-- EXTERIOR --}}
+                    @if($exteriorItems->isNotEmpty())
+                    <div class="mb-8 page-break-inside-avoid">
+                        <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Exterior</h4>
+                        <table class="w-full text-left border-collapse mb-4">
+                            <thead class="bg-gray-800 text-white">
+                                <tr>
+                                    @if($offer->opsi_paket)
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Opsi Paket</th>
+                                    @endif
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[28%] whitespace-nowrap align-middle">Area Pekerjaan</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Nama Brand</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[20%] whitespace-nowrap align-middle">Produk</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[10%] whitespace-nowrap align-middle">Volume/M²</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Harga Satuan</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($exteriorItems as $item)
+                                <tr class="border-b border-gray-500">
+                                    @if($offer->opsi_paket)
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">Paket {{ chr(65 + $globalIndex) }}</td>
+                                    @php $globalIndex++; @endphp
+                                    @endif
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->area_dinding }}</td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
+                                        @php $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first(); @endphp
+                                        {{ $p->performa ?? '-' }}
+                                    </td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->nama_produk }}</td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none text-right whitespace-nowrap align-middle">{{ $item->volume }}</td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->harga_per_m2, 0, ',', '.') }}</span></div>
+                                    </td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap font-medium align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span></div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            @if($showTotal)
+                            <tfoot>
+                                <tr class="bg-gray-100 font-bold text-gray-800">
+                                    <td colspan="{{ $offer->opsi_paket ? 4 : 3 }}" class="py-1 px-1 text-xs text-right uppercase align-middle">Total Exterior</td>
+                                    <td class="py-1 px-1 text-xs text-right align-middle">{{ $exteriorItems->sum('volume') + 0 }}</td>
+                                    <td class="py-1 px-1 text-xs align-middle"></td>
+                                    <td class="py-1 px-1 text-xs text-right whitespace-nowrap align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalExterior, 0, ',', '.') }}</span></div>
+                                    </td>
+                                </tr>
+                            </tfoot>
                             @endif
-                            <th class="py-2 px-2 font-semibold uppercase text-xs w-[28%] whitespace-nowrap align-middle">Area Pekerjaan</th>
-                            <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Nama Brand</th>
-                            <th class="py-2 px-2 font-semibold uppercase text-xs w-[20%] whitespace-nowrap align-middle">Produk</th>
-                            <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[10%] whitespace-nowrap align-middle">Volume/M²</th>
-                            <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Harga Satuan</th>
-                            <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($offer->items as $index => $item)
-                        <tr class="border-b border-gray-500">
-                            @if($offer->opsi_paket)
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">Paket {{ chr(65 + $index) }}</td>
+                        </table>
+                    </div>
+                    @endif
+
+                    {{-- INTERIOR --}}
+                    @if($interiorItems->isNotEmpty())
+                    <div class="mb-8 page-break-inside-avoid">
+                        <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Interior</h4>
+                        <table class="w-full text-left border-collapse mb-4">
+                            <thead class="bg-gray-800 text-white">
+                                <tr>
+                                    @if($offer->opsi_paket)
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Opsi Paket</th>
+                                    @endif
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[28%] whitespace-nowrap align-middle">Area Pekerjaan</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Nama Brand</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs w-[20%] whitespace-nowrap align-middle">Produk</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[10%] whitespace-nowrap align-middle">Volume/M²</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Harga Satuan</th>
+                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($interiorItems as $item)
+                                <tr class="border-b border-gray-500">
+                                    @if($offer->opsi_paket)
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">Paket {{ chr(65 + $globalIndex) }}</td>
+                                    @php $globalIndex++; @endphp
+                                    @endif
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->area_dinding }}</td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
+                                        @php $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first(); @endphp
+                                        {{ $p->performa ?? '-' }}
+                                    </td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->nama_produk }}</td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none text-right whitespace-nowrap align-middle">{{ $item->volume }}</td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->harga_per_m2, 0, ',', '.') }}</span></div>
+                                    </td>
+                                    <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap font-medium align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span></div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            @if($showTotal)
+                            <tfoot>
+                                <tr class="bg-gray-100 font-bold text-gray-800">
+                                    <td colspan="{{ $offer->opsi_paket ? 4 : 3 }}" class="py-1 px-1 text-xs text-right uppercase align-middle">Total Interior</td>
+                                    <td class="py-1 px-1 text-xs text-right align-middle">{{ $interiorItems->sum('volume') + 0 }}</td>
+                                    <td class="py-1 px-1 text-xs align-middle"></td>
+                                    <td class="py-1 px-1 text-xs text-right whitespace-nowrap align-middle">
+                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalInterior, 0, ',', '.') }}</span></div>
+                                    </td>
+                                </tr>
+                            </tfoot>
                             @endif
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->area_dinding }}</td>
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
-                                @php $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first(); @endphp
-                                {{ $p->performa ?? '-' }}
-                            </td>
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->nama_produk }}</td>
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none text-right whitespace-nowrap align-middle">{{ $item->volume }}</td>
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
-                                <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->harga_per_m2, 0, ',', '.') }}</span></div>
-                            </td>
-                            <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap font-medium align-middle">
-                                <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span></div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </table>
+                    </div>
+                    @endif
+
+                    {{-- KASUS 2: DEFAULT --}}
+                    @else
+                    <table class="w-full text-left border-collapse page-break-inside-avoid">
+                        <thead class="bg-gray-800 text-white">
+                            <tr>
+                                @if($offer->opsi_paket)
+                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Opsi Paket</th>
+                                @endif
+                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[28%] whitespace-nowrap align-middle">Area Pekerjaan</th>
+                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[12%] whitespace-nowrap align-middle">Nama Brand</th>
+                                <th class="py-2 px-2 font-semibold uppercase text-xs w-[20%] whitespace-nowrap align-middle">Produk</th>
+                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[10%] whitespace-nowrap align-middle">Volume/M²</th>
+                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Harga Satuan</th>
+                                <th class="py-2 px-2 font-semibold uppercase text-xs text-right w-[15%] whitespace-nowrap align-middle">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($offer->items as $index => $item)
+                            <tr class="border-b border-gray-500">
+                                @if($offer->opsi_paket)
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">Paket {{ chr(65 + $index) }}</td>
+                                @endif
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->area_dinding }}</td>
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
+                                    @php $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first(); @endphp
+                                    {{ $p->performa ?? '-' }}
+                                </td>
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">{{ $item->nama_produk }}</td>
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none text-right whitespace-nowrap align-middle">{{ $item->volume }}</td>
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap align-middle">
+                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->harga_per_m2, 0, ',', '.') }}</span></div>
+                                </td>
+                                <td class="py-1 px-2 text-xs text-gray-700 leading-none whitespace-nowrap font-medium align-middle">
+                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span></div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    @endif
+
                 @endif
 
                 {{-- TABEL JASA (DENGAN TOTAL) --}}

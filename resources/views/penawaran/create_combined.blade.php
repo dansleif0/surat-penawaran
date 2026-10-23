@@ -135,6 +135,18 @@
                             Buat Opsi Paket
                         </label>
                     </div>
+
+                    <div class="flex items-center">
+                        <input id="tampilkan_detail"
+                            name="tampilkan_detail"
+                            type="checkbox"
+                            value="1"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                            {{ (old('tampilkan_detail') ?? ($offer->tampilkan_detail ?? false)) ? 'checked' : '' }}>
+                        <label for="tampilkan_detail" class="ml-2 block text-sm text-gray-700 cursor-pointer">
+                            Tampilkan Detail (Rincian per Area Pekerjaan)
+                        </label>
+                    </div>
                 </div>
 
                 <div class="w-full md:w-1/2 text-right">

@@ -17,12 +17,12 @@
             </div>
         </div>
 
-        {{-- Kartu Pencarian & Filter Jenis --}}
+        {{-- Kartu Pencarian & Filter Jenis & Status --}}
         <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-6">
             <form action="{{ route('histori.index') }}" method="GET" class="flex flex-col md:flex-row items-end justify-between gap-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full md:w-3/4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 w-full md:w-4/5">
                     {{-- Input Pencarian --}}
-                    <div class="md:col-span-2">
+                    <div class="sm:col-span-2 md:col-span-2">
                         <label for="search" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Pencarian</label>
                         <div class="relative">
                             <input type="text" name="search" id="search" placeholder="Cari Nama Klien, No. Surat, atau Detail..." class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors" value="{{ $search ?? '' }}">
@@ -30,6 +30,17 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             </div>
                         </div>
+                    </div>
+
+                    {{-- Dropdown Filter Status --}}
+                    <div>
+                        <label for="status" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Filter Status</label>
+                        <select name="status" id="status" onchange="this.form.submit()" class="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-colors bg-white">
+                            <option value="">Semua Status</option>
+                            <option value="finished" {{ ($status ?? '') == 'finished' ? 'selected' : '' }}>Finished</option>
+                            <option value="in_progress" {{ ($status ?? '') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                            <option value="expired" {{ ($status ?? '') == 'expired' ? 'selected' : '' }}>Expired</option>
+                        </select>
                     </div>
 
                     {{-- Dropdown Filter Jenis --}}
@@ -45,7 +56,7 @@
 
                 {{-- Action Buttons --}}
                 <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-                    @if(request('search') || request('jenis'))
+                    @if(request('search') || request('jenis') || request('status'))
                         <a href="{{ route('histori.index') }}" class="px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors border border-red-200">
                             Reset Filter
                         </a>
@@ -78,6 +89,7 @@
                         <th scope="col" class="px-6 py-3 rounded-tl-lg text-center w-24">Action</th>
                         <th scope="col" class="px-6 py-3">Tanggal</th>
                         <th scope="col" class="px-6 py-3">No. Surat</th>
+                        <th scope="col" class="px-6 py-3 text-center">Status</th>
                         <th scope="col" class="px-6 py-3 text-center">Jenis</th>
                         <th scope="col" class="px-6 py-3">Nama Klien</th>
                         <th scope="col" class="px-6 py-3">Detail</th>
@@ -104,7 +116,7 @@
                                         <div class="border-t border-gray-100 my-1"></div>
                                         <a href="{{ route('invoice.create_from_offer', ['offer' => $offer->id]) }}" class="text-green-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">💰 Buat Invoice</a>
                                         @if($offer->jenis_penawaran != 'produk')
-                                            {{-- Sementara disembunyikan: Buat SPK --}}
+                                             {{-- Sementara disembunyikan: Buat SPK --}}
                                             {{-- <a href="{{ route('skp.create', ['offer' => $offer->id]) }}" class="text-indigo-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">📝 Buat SPK</a> --}}
                                             <a href="{{ route('bast.create', ['offer' => $offer->id]) }}" class="text-teal-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">🤝 Buat BAST</a>
                                             <a href="{{ route('histori.recap', ['offer' => $offer->id]) }}" class="text-blue-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">📋 Buat Rekapan</a>
@@ -131,6 +143,26 @@
                         {{-- NO SURAT --}}
                         <td class="px-6 py-4 font-medium whitespace-nowrap">
                             SP-{{ $offer->created_at->format('Y') }}/{{ str_pad($offer->id, 4, '0', STR_PAD_LEFT) }}
+                        </td>
+
+                        {{-- STATUS PENAWARAN (Finished = Hijau, In Progress = Orange, Expired = Merah) --}}
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
+                            @if($offer->status === 'Finished')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300 shadow-xs">
+                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                    Finished
+                                </span>
+                            @elseif($offer->status === 'Expired')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300 shadow-xs">
+                                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                    Expired
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 shadow-xs">
+                                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                                    In Progress
+                                </span>
+                            @endif
                         </td>
 
                         {{-- JENIS --}}
@@ -171,7 +203,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                             <span class="text-lg font-medium">Belum ada histori penawaran.</span>
                         </td>
                     </tr>

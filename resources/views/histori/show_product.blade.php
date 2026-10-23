@@ -16,8 +16,26 @@
 
 <div class="container mx-auto my-12 px-4">
 
-    <div class="max-w-4xl mx-auto mb-4 flex justify-between gap-2 print:hidden">
-        <a href="{{ route('histori.index') }}" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded hover:bg-gray-300 transition-colors flex items-center">&larr; Kembali</a>
+    <div class="max-w-4xl mx-auto mb-4 flex justify-between items-center gap-2 print:hidden">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('histori.index') }}" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded hover:bg-gray-300 transition-colors flex items-center">&larr; Kembali</a>
+            @if($offer->status === 'Finished')
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Status: Finished
+                </span>
+            @elseif($offer->status === 'Expired')
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    Status: Expired
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 shadow-xs">
+                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                    Status: In Progress
+                </span>
+            @endif
+        </div>
         <div class="flex gap-2">
             <button onclick="window.print()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors flex items-center gap-2">🖨️ Print</button>
             <a href="{{ route('invoice.create_from_offer', $offer->id) }}" class="bg-gray-800 text-white font-bold py-2 px-4 rounded hover:bg-gray-700 transition-colors flex items-center">Buat Invoice &rarr;</a>
