@@ -15,7 +15,7 @@
 
     <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 
-        <form id="offer-form" action="{{ route('histori.update', $offer->id) }}" method="POST" class="p-6 md:p-8">
+        <form id="offer-form" action="{{ route('histori.update', $offer->id) }}" method="POST" class="p-6 md:p-8" novalidate>
             @csrf
             @method('PUT')
             <input type="hidden" name="action" id="action_input" value="save">
@@ -27,15 +27,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Klien / Perusahaan <span class="text-red-500">*</span></label>
-                        <input type="text" name="nama_klien" value="{{ old('nama_klien', $offer->nama_klien) }}" required class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <input type="text" name="nama_klien" id="nama_klien" value="{{ old('nama_klien', $offer->nama_klien) }}" required class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Detail Proyek (Opsional)</label>
-                        <input type="text" name="client_details" value="{{ old('client_details', $offer->client_details) }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <input type="text" name="client_details" id="client_details" value="{{ old('client_details', $offer->client_details) }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Perihal</label>
-                        <input type="text" name="perihal" value="{{ old('perihal', $offer->perihal ?? 'Penawaran Jasa Apply dan Supply Pengecatan') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Perihal <span class="text-red-500">*</span></label>
+                        <input type="text" name="perihal" id="perihal" value="{{ old('perihal', $offer->perihal ?? 'Penawaran Jasa Apply dan Supply Pengecatan') }}" required class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                 </div>
             </div>
@@ -65,7 +65,7 @@
 
                         {{-- 1. Nama Produk (4 Kolom) --}}
                         <div class="md:col-span-4">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Produk</label>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Produk <span class="text-red-500">*</span></label>
                             <select name="produk[{{$index}}][nama]" class="product-select w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">-- Pilih --</option>
                                 @foreach ($all_products as $product)
@@ -76,19 +76,19 @@
 
                         {{-- 2. Area (2 Kolom) --}}
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Area</label>
-                            <input type="text" name="produk[{{$index}}][area]" value="{{ $item->area_dinding }}" placeholder="Dinding Luar" class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Area <span class="text-red-500">*</span></label>
+                            <input type="text" name="produk[{{$index}}][area]" value="{{ $item->area_dinding }}" placeholder="Dinding Luar" class="area-input w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
                         {{-- 3. Volume (1.5 Kolom) --}}
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Vol (m²)</label>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Vol (m²) <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" name="produk[{{$index}}][volume]" value="{{ $item->volume }}" class="volume-input w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 text-center">
                         </div>
 
                         {{-- 4. Harga (2 Kolom) --}}
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga/m²</label>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga/m² <span class="text-red-500">*</span></label>
                             <input type="number" name="produk[{{$index}}][harga]" value="{{ $item->harga_per_m2 }}" class="harga-input w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
@@ -143,19 +143,19 @@
 
                         {{-- 1. Nama Pengerjaan --}}
                         <div class="md:col-span-4">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Pengerjaan</label>
-                            <input type="text" name="jasa[{{$index}}][nama]" value="{{ $jasa->nama_jasa }}" class="w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Pengerjaan <span class="text-red-500">*</span></label>
+                            <input type="text" name="jasa[{{$index}}][nama]" value="{{ $jasa->nama_jasa }}" class="jasa-nama-input w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                         </div>
 
                         {{-- 2. Volume --}}
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Volume</label>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Volume <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" name="jasa[{{$index}}][volume]" value="{{ $jasa->volume ?? 1 }}" class="jasa-volume w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 text-center">
                         </div>
 
                         {{-- 3. Satuan --}}
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Satuan</label>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Satuan <span class="text-red-500">*</span></label>
                             <select name="jasa[{{$index}}][satuan]" class="jasa-satuan w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                                 <option value="Ls" {{ in_array(($jasa->satuan ?? ''), ['Ls', 'LS', 'ls']) ? 'selected' : '' }}>Ls (Lumpsum)</option>
                                 <option value="Lot" {{ in_array(($jasa->satuan ?? ''), ['Lot', 'LOT', 'lot']) ? 'selected' : '' }}>Lot</option>
@@ -171,7 +171,7 @@
 
                         {{-- 4. Harga Satuan --}}
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga Satuan</label>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga Satuan <span class="text-red-500">*</span></label>
                             <input type="number" name="jasa[{{$index}}][harga]" value="{{ $jasa->harga_satuan ?? $jasa->harga_jasa }}" class="jasa-harga w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                         </div>
 
@@ -267,7 +267,7 @@
 <template id="product-row-template">
     <div class="product-row grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-4 border border-gray-200 rounded-lg bg-gray-50 relative hover:shadow-sm transition-shadow">
         <div class="md:col-span-4">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Produk</label>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Produk <span class="text-red-500">*</span></label>
             <select class="product-select w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="">-- Pilih --</option>
                 @foreach ($all_products as $product)
@@ -276,15 +276,15 @@
             </select>
         </div>
         <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Area</label>
-            <input type="text" placeholder="Dinding Luar" class="w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Area <span class="text-red-500">*</span></label>
+            <input type="text" placeholder="Dinding Luar" class="area-input w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Vol (m²)</label>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Vol (m²) <span class="text-red-500">*</span></label>
             <input type="number" step="0.01" value="1" class="volume-input w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 text-center">
         </div>
         <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga/m²</label>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga/m² <span class="text-red-500">*</span></label>
             <input type="number" class="harga-input w-full rounded-md border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div class="md:col-span-2">
@@ -316,17 +316,17 @@
     <div class="jasa-row grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-4 border border-gray-200 rounded-lg bg-gray-50 relative hover:shadow-sm transition-shadow">
 
         <div class="md:col-span-4">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Pengerjaan</label>
-            <input type="text" class="w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500" placeholder="Contoh: Biaya Scaffolding">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Pengerjaan <span class="text-red-500">*</span></label>
+            <input type="text" class="jasa-nama-input w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500" placeholder="Contoh: Biaya Scaffolding">
         </div>
 
         <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Volume</label>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Volume <span class="text-red-500">*</span></label>
             <input type="number" step="0.01" value="1" class="jasa-volume w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 text-center">
         </div>
 
         <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Satuan</label>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Satuan <span class="text-red-500">*</span></label>
             <select class="jasa-satuan w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
                 <option value="Ls">Ls (Lumpsum)</option>
                 <option value="Lot">Lot</option>
@@ -341,7 +341,7 @@
         </div>
 
         <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga Satuan</label>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Harga Satuan <span class="text-red-500">*</span></label>
             <input type="number" class="jasa-harga w-full rounded-md border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
         </div>
 
@@ -632,6 +632,205 @@
         // Hitung total saat pertama kali load halaman edit
         calculateAllTotals();
 
+        // --- Toast Notifikasi Validasi ---
+        function showValidationToast(message) {
+            let toast = document.getElementById('validation-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'validation-toast';
+                toast.className = 'fixed top-5 right-5 z-50 flex items-center gap-3 bg-red-600 text-white px-5 py-3.5 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 text-sm font-semibold max-w-md';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div class="flex-1">${message}</div>
+                <button type="button" class="text-white hover:text-red-200 text-lg font-bold ml-2 leading-none" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            toast.classList.remove('opacity-0', '-translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                if (toast && toast.parentElement) {
+                    toast.classList.add('opacity-0', '-translate-y-4');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4500);
+        }
+
+        // --- Fungsi Validasi Form Penawaran Proyek (Edit) ---
+        function clearAllErrors() {
+            document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+            document.querySelectorAll('.field-error-text').forEach(el => el.remove());
+        }
+
+        function markFieldError(err) {
+            const el = err.element;
+            if (!el) return;
+
+            if (err.isTomSelect && err.tsWrapper) {
+                const tsControl = err.tsWrapper.querySelector('.ts-control');
+                if (tsControl) {
+                    tsControl.classList.add('field-error');
+                }
+            } else {
+                el.classList.add('field-error');
+            }
+
+            const container = (err.isTomSelect && err.tsWrapper) ? err.tsWrapper.parentElement : el.parentElement;
+            if (container && !container.querySelector('.field-error-text')) {
+                const msgEl = document.createElement('p');
+                msgEl.className = 'field-error-text text-xs text-red-500 font-semibold mt-1';
+                msgEl.textContent = err.message;
+                container.appendChild(msgEl);
+            }
+
+            const clearFn = function() {
+                if (err.isTomSelect && err.tsWrapper) {
+                    const tsControl = err.tsWrapper.querySelector('.ts-control');
+                    if (tsControl) tsControl.classList.remove('field-error');
+                }
+                el.classList.remove('field-error');
+                if (container) {
+                    const msgEl = container.querySelector('.field-error-text');
+                    if (msgEl) msgEl.remove();
+                }
+                el.removeEventListener('input', clearFn);
+                el.removeEventListener('change', clearFn);
+            };
+
+            el.addEventListener('input', clearFn);
+            el.addEventListener('change', clearFn);
+            if (err.isTomSelect && el.tomselect) {
+                el.tomselect.on('change', clearFn);
+            }
+        }
+
+        function validateCombinedOfferForm() {
+            clearAllErrors();
+            const errors = [];
+
+            // 1. Validasi Nama Klien
+            const namaKlien = document.getElementById('nama_klien');
+            if (!namaKlien || !namaKlien.value.trim()) {
+                errors.push({
+                    element: namaKlien,
+                    scrollTarget: namaKlien,
+                    message: 'Nama Klien / Perusahaan wajib diisi.'
+                });
+            }
+
+            // 2. Validasi Perihal
+            const perihal = document.getElementById('perihal');
+            if (!perihal || !perihal.value.trim()) {
+                errors.push({
+                    element: perihal,
+                    scrollTarget: perihal,
+                    message: 'Perihal penawaran wajib diisi.'
+                });
+            }
+
+            // 3. Validasi Produk & Jasa
+            const productRows = document.querySelectorAll('#product-rows-container .product-row');
+            const jasaRows = document.querySelectorAll('#jasa-rows-container .jasa-row');
+
+            if (productRows.length === 0 && jasaRows.length === 0) {
+                const addBtn = document.getElementById('add-product-row-btn');
+                errors.push({
+                    element: addBtn,
+                    scrollTarget: addBtn,
+                    message: 'Tambahkan minimal 1 baris produk atau jasa penawaran.'
+                });
+            }
+
+            // Validasi setiap baris produk
+            productRows.forEach((row, index) => {
+                const select = row.querySelector('.product-select');
+                const area = row.querySelector('.area-input') || row.querySelector('input[placeholder="Dinding Luar"]') || row.querySelector('input[name*="[area]"]');
+                const vol = row.querySelector('.volume-input');
+                const hrg = row.querySelector('.harga-input');
+
+                if (!select || !select.value.trim()) {
+                    errors.push({
+                        element: select,
+                        scrollTarget: row,
+                        isTomSelect: true,
+                        tsWrapper: row.querySelector('.ts-wrapper'),
+                        focusEl: () => { if (select.tomselect) select.tomselect.focus(); },
+                        message: `Nama Produk baris #${index + 1} wajib dipilih.`
+                    });
+                }
+
+                if (!area || !area.value.trim()) {
+                    errors.push({
+                        element: area,
+                        scrollTarget: row,
+                        message: `Area baris #${index + 1} wajib diisi.`
+                    });
+                }
+
+                if (!vol || vol.value === '' || parseFloat(vol.value) <= 0 || isNaN(parseFloat(vol.value))) {
+                    errors.push({
+                        element: vol,
+                        scrollTarget: row,
+                        message: `Volume baris #${index + 1} minimal lebih dari 0.`
+                    });
+                }
+
+                if (!hrg || hrg.value === '' || parseFloat(hrg.value) < 0 || isNaN(parseFloat(hrg.value))) {
+                    errors.push({
+                        element: hrg,
+                        scrollTarget: row,
+                        message: `Harga/m² baris #${index + 1} wajib diisi.`
+                    });
+                }
+            });
+
+            // Validasi setiap baris jasa
+            jasaRows.forEach((row, index) => {
+                const nama = row.querySelector('.jasa-nama-input') || row.querySelector('input[name*="[nama]"]');
+                const vol = row.querySelector('.jasa-volume');
+                const sat = row.querySelector('.jasa-satuan');
+                const hrg = row.querySelector('.jasa-harga');
+
+                if (!nama || !nama.value.trim()) {
+                    errors.push({
+                        element: nama,
+                        scrollTarget: row,
+                        message: `Nama Pengerjaan baris #${index + 1} wajib diisi.`
+                    });
+                }
+
+                if (!vol || vol.value === '' || parseFloat(vol.value) <= 0 || isNaN(parseFloat(vol.value))) {
+                    errors.push({
+                        element: vol,
+                        scrollTarget: row,
+                        message: `Volume baris #${index + 1} minimal lebih dari 0.`
+                    });
+                }
+
+                if (!sat || !sat.value.trim()) {
+                    errors.push({
+                        element: sat,
+                        scrollTarget: row,
+                        message: `Satuan baris #${index + 1} wajib dipilih.`
+                    });
+                }
+
+                if (!hrg || hrg.value === '' || parseFloat(hrg.value) < 0 || isNaN(parseFloat(hrg.value))) {
+                    errors.push({
+                        element: hrg,
+                        scrollTarget: row,
+                        message: `Harga satuan baris #${index + 1} wajib diisi.`
+                    });
+                }
+            });
+
+            return errors;
+        }
+
         // --- 5. Anti Double-Submit & Dirty Form Protection ---
         let isFormDirty = false;
         let isSubmitting = false;
@@ -644,11 +843,42 @@
             offerForm.addEventListener('change', function() {
                 isFormDirty = true;
             });
+
             offerForm.addEventListener('submit', function(e) {
-                if (offerForm.checkValidity && !offerForm.checkValidity()) {
+                const errors = validateCombinedOfferForm();
+
+                if (errors.length > 0) {
+                    e.preventDefault();
                     isSubmitting = false;
-                    return;
+
+                    // Tandai semua field yang error
+                    errors.forEach(err => markFieldError(err));
+
+                    // Tampilkan notifikasi toast
+                    showValidationToast('Ada form yang belum diisi! Halaman secara otomatis diarahkan ke bagian yang belum lengkap.');
+
+                    // Scroll otomatis ke field pertama yang belum diisi
+                    const firstErr = errors[0];
+                    const scrollTarget = firstErr.scrollTarget || firstErr.element;
+
+                    if (scrollTarget) {
+                        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        scrollTarget.classList.add('field-error-shake');
+                        setTimeout(() => scrollTarget.classList.remove('field-error-shake'), 600);
+                    }
+
+                    // Fokus pada input pertama yang error
+                    setTimeout(() => {
+                        if (firstErr.focusEl) {
+                            firstErr.focusEl();
+                        } else if (firstErr.element && typeof firstErr.element.focus === 'function') {
+                            firstErr.element.focus();
+                        }
+                    }, 350);
+
+                    return false;
                 }
+
                 isSubmitting = true;
 
                 const submitButtons = offerForm.querySelectorAll('button[type="submit"]');
@@ -676,4 +906,25 @@
         });
     });
 </script>
+
+<style>
+    @keyframes fieldShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-6px); }
+        40%, 80% { transform: translateX(6px); }
+    }
+    .field-error {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+    }
+    .field-error-shake {
+        animation: fieldShake 0.4s ease-in-out;
+    }
+    .ts-control.field-error {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+    }
+</style>
 @endsection

@@ -81,7 +81,7 @@
              BANNER: Informasi Persiapkan (hanya untuk non-admin jika ada)
              =================================================================== --}}
         @if(Auth::check() && Auth::user()->role !== 'admin' && $persiapanCount > 0)
-        <div class="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-500 rounded-xl p-4 shadow-sm flex items-center justify-between gap-4 animate-slide-down">
+        <div class="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-500 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-slide-down">
             <div class="flex items-start gap-3">
                 <div class="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,6 +93,18 @@
                     <p class="text-orange-700 text-xs mt-1">Admin telah menandai <strong>{{ $persiapanCount }} invoice</strong> yang perlu dipersiapkan. Invoice tersebut ditampilkan paling atas dengan label <span class="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">PERSIAPKAN</span>.</p>
                 </div>
             </div>
+            @if(Auth::user()->role === 'staff_gudang')
+            <form action="{{ route('invoice.konfirmasi_semua_persiapan') }}" method="POST"
+                  onsubmit="return confirm('Konfirmasi semua ({{ $persiapanCount }}) invoice persiapan sekaligus?\n\nStok produk yang terdaftar akan otomatis dipotong.');" class="shrink-0">
+                @csrf
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs py-2 px-3.5 rounded-lg shadow transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Konfirmasi Semua ({{ $persiapanCount }})
+                </button>
+            </form>
+            @endif
         </div>
         @endif
 
@@ -155,7 +167,7 @@
 
         @if (session('error'))
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 shadow-sm" role="alert">
-                <p>{{ session('error') }}</p>
+                <div class="text-sm font-medium leading-relaxed">{!! nl2br(e(session('error'))) !!}</div>
             </div>
         @endif
 
@@ -198,7 +210,8 @@
                         <td class="px-4 py-4 text-center whitespace-nowrap">
                             <input type="checkbox" value="{{ $invoice->id }}"
                                 data-jenis="{{ $invoice->jenis }}"
-                                data-persiapan="{{ ($invoice->is_persiapan || $invoice->persiapan_confirmed_at) ? '1' : '0' }}"
+                                data-persiapan="{{ ($invoice->is_persiapan && !$invoice->persiapan_confirmed_at) ? '1' : '0' }}"
+                                data-confirmed="{{ $invoice->persiapan_confirmed_at ? '1' : '0' }}"
                                 class="invoice-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
                         </td>
                         @endif
@@ -213,19 +226,19 @@
                                         🚚 PERSIAPKAN
                                     </span>
                                 @endif
-                                {{-- Label sudah dikonfirmasi (Staff Gudang) --}}
+                                {{-- Label sudah dikonfirmasi (Staff Gudang & Driver) --}}
                                 @if($invoice->persiapan_confirmed_at && Auth::check() && Auth::user()->role !== 'admin')
                                     <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit border border-emerald-300">
                                         ✓ Dikonfirmasi
                                     </span>
                                 @endif
-                                {{-- Label admin: sudah ditandai persiapkan --}}
-                                @if($invoice->is_persiapan && Auth::check() && Auth::user()->role === 'admin')
+                                {{-- Label admin: status persiapan aktif vs sudah dikonfirmasi permanent --}}
+                                @if($invoice->is_persiapan && !$invoice->persiapan_confirmed_at && Auth::check() && Auth::user()->role === 'admin')
                                     <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit border border-orange-300">
                                         📋 Persiapkan aktif
                                     </span>
                                 @elseif($invoice->persiapan_confirmed_at && Auth::check() && Auth::user()->role === 'admin')
-                                    <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit border border-emerald-300">
+                                    <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit border border-emerald-300" title="Pesanan telah dikonfirmasi oleh Staff Gudang dan stok telah dipotong otomatis. Tidak dapat dibatalkan lagi.">
                                         ✓ Dikonfirmasi SG
                                     </span>
                                 @endif
@@ -325,8 +338,8 @@
                                             </a>
 
                                             @if(Auth::check() && Auth::user()->role === 'admin')
-                                                {{-- Batalkan Persiapkan (Super User / Admin) --}}
-                                                @if($invoice->is_persiapan || $invoice->persiapan_confirmed_at)
+                                                {{-- Batalkan Persiapkan (Super User / Admin) - Hanya jika belum dikonfirmasi Staff Gudang --}}
+                                                @if($invoice->is_persiapan && !$invoice->persiapan_confirmed_at)
                                                     <form action="{{ route('invoice.batal_persiapan', $invoice->id) }}" method="POST" onsubmit="return confirm('Batalkan status persiapan untuk invoice {{ $invoice->no_invoice }}?');">
                                                         @csrf
                                                         <button type="submit" class="group flex w-full items-center px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 hover:text-rose-800" role="menuitem">
@@ -375,8 +388,8 @@
                                     </div>
                                 </div>
 
-                                {{-- Tombol Batal Persiapkan: Super User / Admin --}}
-                                @if(Auth::check() && Auth::user()->role === 'admin' && ($invoice->is_persiapan || $invoice->persiapan_confirmed_at))
+                                {{-- Tombol Batal Persiapkan: Super User / Admin - Hanya jika belum dikonfirmasi --}}
+                                @if(Auth::check() && Auth::user()->role === 'admin' && $invoice->is_persiapan && !$invoice->persiapan_confirmed_at)
                                     <form action="{{ route('invoice.batal_persiapan', $invoice->id) }}" method="POST"
                                           onsubmit="return confirm('Batalkan status persiapan untuk invoice {{ $invoice->no_invoice }}?');" class="w-full mt-1.5">
                                         @csrf
@@ -397,14 +410,14 @@
                                 {{-- Tombol Konfirmasi Persiapan: hanya Staff Gudang & invoice masih persiapan --}}
                                 @if(Auth::check() && Auth::user()->role === 'staff_gudang' && $isPersiapan)
                                     <form action="{{ route('invoice.konfirmasi_persiapan', $invoice->id) }}" method="POST"
-                                          onsubmit="return confirm('Konfirmasi bahwa invoice {{ $invoice->no_invoice }} sudah dipersiapkan?');" class="w-full mt-1.5">
+                                          onsubmit="return confirm('Konfirmasi bahwa invoice {{ $invoice->no_invoice }} sudah dipersiapkan?\n\nStok produk yang terdaftar akan otomatis dipotong.');" class="w-full mt-1.5">
                                         @csrf
                                         <button type="submit"
                                             class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-lg shadow-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
                                             style="background-color: #059669; color: #ffffff; border: 1px solid #047857; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.4);"
                                             onmouseover="this.style.backgroundColor='#047857'"
                                             onmouseout="this.style.backgroundColor='#059669'"
-                                            title="Klik untuk konfirmasi bahwa pesanan ini sudah dipersiapkan">
+                                            title="Klik untuk konfirmasi bahwa pesanan ini sudah dipersiapkan (Stok produk akan otomatis berkurang)">
                                             <svg class="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                                             </svg>
@@ -519,10 +532,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ─── Perbarui tombol Persiapkan & Batal Persiapkan berdasarkan checkbox ────
     function updateActionButtons() {
-        // 1. Tombol Persiapkan (Hanya invoice berjenis "produk")
+        // 1. Tombol Persiapkan (Hanya invoice berjenis "produk" yang belum dikonfirmasi)
         if (btnPersiapkan) {
             const produkChecked = Array.from(document.querySelectorAll('.invoice-checkbox:checked'))
-                .filter(cb => cb.dataset.jenis === 'produk');
+                .filter(cb => cb.dataset.jenis === 'produk' && cb.dataset.confirmed !== '1');
 
             if (produkChecked.length > 0) {
                 btnPersiapkan.disabled = false;
@@ -594,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnPersiapkan && persiapkanForm) {
         btnPersiapkan.addEventListener('click', function() {
             const produkChecked = Array.from(document.querySelectorAll('.invoice-checkbox:checked'))
-                .filter(cb => cb.dataset.jenis === 'produk');
+                .filter(cb => cb.dataset.jenis === 'produk' && cb.dataset.confirmed !== '1');
 
             if (produkChecked.length === 0) {
                 alert('Pilih minimal 1 invoice produk yang ingin dipersiapkan!');

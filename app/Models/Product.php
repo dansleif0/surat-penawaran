@@ -20,5 +20,6 @@ class Product extends Model
         'kriteria', // <-- Tanda koma ditambahkan di sini
         'performa',
         'harga',
+        'stok',
     ];
 }

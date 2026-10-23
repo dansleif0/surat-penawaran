@@ -72,6 +72,10 @@ class RecapController extends Controller
 
     public function create(Offer $offer)
     {
+        if ($offer->jenis_penawaran === 'produk') {
+            return redirect()->route('histori.index')->with('error', 'Rekapan proyek hanya tersedia untuk surat penawaran jenis proyek.');
+        }
+
         $offer->load(['items', 'jasaItems']);
 
         // Hitung total penawaran klien untuk referensi
@@ -87,6 +91,11 @@ class RecapController extends Controller
      */
     public function store(Request $request)
     {
+        $offer = Offer::findOrFail($request->offer_id);
+        if ($offer->jenis_penawaran === 'produk') {
+            return redirect()->route('histori.index')->with('error', 'Rekapan proyek hanya tersedia untuk surat penawaran jenis proyek.');
+        }
+
         $request->validate([
             'offer_id' => 'required',
             'items' => 'required|array',

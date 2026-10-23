@@ -105,7 +105,7 @@
         </section>
 
         {{-- FOOTER SIGNATURE & BANK INFO --}}
-        <section class="mt-8 flex justify-between items-end text-xs font-sans text-black">
+        <section class="mt-8 flex justify-between items-end text-xs font-sans text-black signature-section">
             {{-- Bank & Received By --}}
             <div class="w-1/2">
                 <p class="font-bold tracking-wide">BANKERS PT. TASNIEM GERAI INSPIRASI</p>
@@ -137,8 +137,8 @@
 <style>
     @media print {
         @page {
-            size: 21.00cm 13.97cm;
-            margin: 3mm 5mm;
+            size: A4 portrait;
+            margin: 12.7mm;
         }
 
         .print\:hidden, nav, header.bg-white.shadow-sm, aside {
@@ -149,6 +149,7 @@
             background-color: white !important;
             margin: 0;
             padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         #statement-print-area {
@@ -159,7 +160,23 @@
             box-shadow: none !important;
             border: none !important;
             margin: 0 !important;
-            padding: 12.7mm !important;
+            padding: 0 !important;
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+
+        table {
+            page-break-inside: avoid;
+            width: 100%;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        .signature-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
     }
 </style>

@@ -2,9 +2,22 @@
 
 @section('content')
 <div class="container mx-auto my-12 px-4">
-    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center">Edit Invoice</h1>
-        <h2 class="text-lg font-medium mb-6 text-center text-gray-700">No: {{ $invoice->no_invoice }}</h2>
+    <div class="max-w-4xl mx-auto mb-4 flex justify-between items-center">
+        <a href="{{ route('invoice.show', $invoice->id) }}" id="btn-back-invoice" class="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1.5 transition">
+            &larr; Kembali ke Detail Invoice
+        </a>
+    </div>
+
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md border border-gray-200">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Edit Invoice</h1>
+                <p class="text-sm text-gray-500 mt-0.5">No. Invoice: <span class="font-semibold text-gray-700">{{ $invoice->no_invoice }}</span></p>
+            </div>
+            <a href="{{ route('invoice.show', $invoice->id) }}" class="btn-cancel-nav text-sm text-gray-500 hover:text-gray-800 font-medium">
+                &larr; Batal & Kembali
+            </a>
+        </div>
 
         <!-- Diarahkan ke route 'invoice.update' -->
         <form id="invoice-form" action="{{ route('invoice.update', $invoice->id) }}" method="POST">
@@ -148,7 +161,17 @@
                 </div>
             </div>
 
-            <div class="mt-8"><button type="submit" class="w-full bg-yellow-500 text-white font-bold py-3 px-6 rounded hover:bg-yellow-400"> Update Invoice </button></div>
+            <div class="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-3">
+                <a href="{{ route('invoice.show', $invoice->id) }}" class="btn-cancel-nav bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-md transition text-sm flex items-center justify-center">
+                    Batal
+                </a>
+                <button type="submit" class="bg-yellow-500 hover:bg-yellow-400 text-white font-bold py-3 px-8 rounded-md transition shadow-md flex items-center justify-center gap-2 text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Update Invoice
+                </button>
+            </div>
         </form>
     </div>
 
@@ -173,11 +196,56 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // --- UPDATE JS ---
+    // --- Dirty Form Protection & Submit Tracking (Sama Persis Seperti di Surat Penawaran) ---
+    let isFormDirty = false;
+    let isSubmitting = false;
+
+    const invoiceForm = document.getElementById('invoice-form');
+    if (invoiceForm) {
+        invoiceForm.addEventListener('input', function() { isFormDirty = true; });
+        invoiceForm.addEventListener('change', function() { isFormDirty = true; });
+
+        invoiceForm.addEventListener('submit', function() {
+            isSubmitting = true;
+            const submitButton = invoiceForm.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Menyimpan...
+                `;
+            }
+        });
+    }
+
+    // --- Proteksi Keluar Tanpa Menyimpan (Browser Unload) ---
+    window.addEventListener('beforeunload', function(e) {
+        if (isFormDirty && !isSubmitting) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // --- Proteksi Navigasi Klik Link / Tombol Batal / Kembali ---
+    document.querySelectorAll('#btn-back-invoice, .btn-cancel-nav, a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+            if (isFormDirty && !isSubmitting) {
+                if (!confirm('Anda memiliki perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan invoice?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+
     // Mulai indeks SETELAH jumlah item yang sudah ada
     let pekerjaanRowIndex = {{ $invoice->additions->count() }};
     let dpRowIndex = {{ $invoice->payments->count() }};
-    // ---------------
 
     const offerTotal = parseFloat(document.getElementById('offer_total').value) || 0;
 
@@ -224,13 +292,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const pekerjaanTemplate = document.getElementById('pekerjaan-row-template').content.firstElementChild;
 
     addPekerjaanBtn.addEventListener('click', () => {
+        isFormDirty = true;
         const newRow = pekerjaanTemplate.cloneNode(true);
-        // Gunakan indeks JS yang sudah diupdate
         newRow.querySelector('input[type="text"]').name = `pekerjaan[${pekerjaanRowIndex}][nama]`;
         newRow.querySelector('.pekerjaan-harga').name = `pekerjaan[${pekerjaanRowIndex}][harga]`;
 
-        newRow.querySelector('.calc-trigger').addEventListener('input', calculateAllTotals);
+        newRow.querySelector('.calc-trigger').addEventListener('input', () => {
+            isFormDirty = true;
+            calculateAllTotals();
+        });
         newRow.querySelector('.remove-row-btn').addEventListener('click', () => {
+            isFormDirty = true;
             newRow.remove();
             calculateAllTotals();
         });
@@ -246,13 +318,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const dpTemplate = document.getElementById('dp-row-template').content.firstElementChild;
 
     addDpBtn.addEventListener('click', () => {
+        isFormDirty = true;
         const newRow = dpTemplate.cloneNode(true);
-        // Gunakan indeks JS yang sudah diupdate
         newRow.querySelector('input[type="text"]').name = `dp[${dpRowIndex}][keterangan]`;
         newRow.querySelector('.dp-jumlah').name = `dp[${dpRowIndex}][jumlah]`;
 
-        newRow.querySelector('.calc-trigger').addEventListener('input', calculateAllTotals);
+        newRow.querySelector('.calc-trigger').addEventListener('input', () => {
+            isFormDirty = true;
+            calculateAllTotals();
+        });
         newRow.querySelector('.remove-row-btn').addEventListener('click', () => {
+            isFormDirty = true;
             newRow.remove();
             calculateAllTotals();
         });
@@ -262,37 +338,25 @@ document.addEventListener('DOMContentLoaded', function () {
         calculateAllTotals();
     });
 
-    // --- UPDATE JS ---
     // Tambahkan event listener untuk baris yang sudah ada (di-render oleh PHP)
     document.querySelectorAll('#pekerjaan-rows-container .pekerjaan-row, #dp-rows-container .dp-row').forEach(row => {
-        // Tambahkan event listener untuk tombol hapus
         row.querySelector('.remove-row-btn').addEventListener('click', () => {
+            isFormDirty = true;
             row.remove();
             calculateAllTotals();
         });
 
-        // Tambahkan event listener untuk kalkulasi
         const trigger = row.querySelector('.calc-trigger');
         if (trigger) {
-            trigger.addEventListener('input', calculateAllTotals);
+            trigger.addEventListener('input', () => {
+                isFormDirty = true;
+                calculateAllTotals();
+            });
         }
     });
-    // ---------------
 
     // Inisialisasi kalkulasi saat halaman dimuat
     calculateAllTotals();
-
-    // Logika anti double-submit
-    const invoiceForm = document.getElementById('invoice-form');
-    if (invoiceForm) {
-        invoiceForm.addEventListener('submit', function() {
-            const submitButton = invoiceForm.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Menyimpan...';
-            }
-        });
-    }
 });
 </script>
 @endsection

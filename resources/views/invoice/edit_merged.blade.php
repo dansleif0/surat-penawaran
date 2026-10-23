@@ -7,7 +7,7 @@
         <!-- Header Navigasi -->
         <div class="flex justify-between items-center mb-6">
             <div>
-                <a href="{{ route('invoice.show', $invoice->id) }}" class="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-1">
+                <a href="{{ route('invoice.show', $invoice->id) }}" id="btn-back-merged" class="btn-cancel-merged text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-1 transition">
                     &larr; Kembali ke Detail Invoice
                 </a>
                 <h1 class="text-3xl font-bold text-gray-800">Edit Invoice Gabungan (Piutang Statement)</h1>
@@ -267,7 +267,7 @@
 
                 <!-- BUTTON ACTION -->
                 <div class="flex justify-end gap-4">
-                    <a href="{{ route('invoice.show', $invoice->id) }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-md transition">
+                    <a href="{{ route('invoice.show', $invoice->id) }}" class="btn-cancel-merged bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-md transition flex items-center justify-center">
                         Batal
                     </a>
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-md transition shadow-md flex items-center gap-2">
@@ -285,6 +285,53 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Dirty Form Protection & Submit Tracking (Sama Persis Seperti di Surat Penawaran) ---
+    let isFormDirty = false;
+    let isSubmitting = false;
+
+    const combineEditForm = document.getElementById('combine-edit-form');
+    if (combineEditForm) {
+        combineEditForm.addEventListener('input', function() { isFormDirty = true; });
+        combineEditForm.addEventListener('change', function() { isFormDirty = true; });
+
+        combineEditForm.addEventListener('submit', function() {
+            isSubmitting = true;
+            const submitBtn = combineEditForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Menyimpan Perubahan...
+                `;
+            }
+        });
+    }
+
+    // --- Proteksi Keluar Tanpa Menyimpan (Browser Unload) ---
+    window.addEventListener('beforeunload', function(e) {
+        if (isFormDirty && !isSubmitting) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // --- Proteksi Navigasi Klik Link / Tombol Batal / Kembali ---
+    document.querySelectorAll('#btn-back-merged, .btn-cancel-merged, a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+            if (isFormDirty && !isSubmitting) {
+                if (!confirm('Anda memiliki perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan invoice?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+
     let mergedIndex = {{ count($invoice->mergedItems) }};
     let workIndex = {{ count($invoice->additions) }};
     let dpIndex = {{ count($invoice->payments) }};
@@ -334,17 +381,24 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('display_sisa_pembayaran').textContent = formatRupiah(sisaPembayaran);
     }
 
-    diskonInput.addEventListener('input', calculateTotals);
+    diskonInput.addEventListener('input', function() {
+        isFormDirty = true;
+        calculateTotals();
+    });
 
     function bindRowEvents() {
         document.querySelectorAll('.merged-debit-input, .work-price, .dp-amount').forEach(input => {
             input.removeEventListener('input', calculateTotals);
-            input.addEventListener('input', calculateTotals);
+            input.addEventListener('input', function() {
+                isFormDirty = true;
+                calculateTotals();
+            });
         });
     }
 
     // Tambah Baris Invoice Merged Baru
     addMergedBtn.addEventListener('click', function() {
+        isFormDirty = true;
         const tr = document.createElement('tr');
         tr.className = 'merged-item-row hover:bg-gray-50';
         tr.innerHTML = `
@@ -379,6 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Tambah Pekerjaan Baru
     addWorkBtn.addEventListener('click', function() {
+        isFormDirty = true;
         const noMsg = document.getElementById('no-work-msg');
         if (noMsg) noMsg.remove();
 
@@ -409,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Tambah DP Baru
     addDpBtn.addEventListener('click', function() {
+        isFormDirty = true;
         const noMsg = document.getElementById('no-dp-msg');
         if (noMsg) noMsg.remove();
 
@@ -440,14 +496,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Delegate Hapus Baris
     document.addEventListener('click', function(e) {
         if (e.target.closest('.remove-merged-item-btn')) {
+            isFormDirty = true;
             e.target.closest('.merged-item-row').remove();
             calculateTotals();
         }
         if (e.target.closest('.remove-work-btn')) {
+            isFormDirty = true;
             e.target.closest('.work-row').remove();
             calculateTotals();
         }
         if (e.target.closest('.remove-dp-btn')) {
+            isFormDirty = true;
             e.target.closest('.dp-row').remove();
             calculateTotals();
         }

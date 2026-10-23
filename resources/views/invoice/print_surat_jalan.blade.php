@@ -168,6 +168,65 @@
         </button>
     </div>
 
+    {{-- Notifikasi Sukses / Error Flash Message (Terapung, Hanya di Monitor, Tidak Ikut Terprint) --}}
+    @if(session('success'))
+    <div id="toast-success-alert" class="no-print fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 border border-emerald-500">
+        <div class="flex items-center justify-center w-8 h-8 bg-emerald-500 rounded-full flex-shrink-0 shadow-inner">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <div>
+            <p class="font-bold text-sm leading-tight">Berhasil!</p>
+            <p class="text-xs text-emerald-100 mt-0.5">{{ session('success') }}</p>
+        </div>
+        <button type="button" onclick="document.getElementById('toast-success-alert').remove()" class="ml-4 text-emerald-200 hover:text-white transition p-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    <script>
+        setTimeout(() => {
+            const toast = document.getElementById('toast-success-alert');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4000);
+    </script>
+    @endif
+
+    @if(session('error'))
+    <div id="toast-error-alert" class="no-print fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-rose-600 text-white px-5 py-3.5 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 border border-rose-500">
+        <div class="flex items-center justify-center w-8 h-8 bg-rose-500 rounded-full flex-shrink-0 shadow-inner">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+        <div>
+            <p class="font-bold text-sm leading-tight">Terjadi Kesalahan</p>
+            <p class="text-xs text-rose-100 mt-0.5">{{ session('error') }}</p>
+        </div>
+        <button type="button" onclick="document.getElementById('toast-error-alert').remove()" class="ml-4 text-rose-200 hover:text-white transition p-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    <script>
+        setTimeout(() => {
+            const toast = document.getElementById('toast-error-alert');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 5000);
+    </script>
+    @endif
+
     {{-- KONTEN UTAMA 1 HALAMAN (INVOICE + SURAT JALAN) --}}
     <div id="main-container">
 

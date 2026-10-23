@@ -16,13 +16,13 @@
                 <p class="text-slate-500 mt-1">Proyek: <span class="font-bold text-indigo-600">{{ $recap->offer->nama_klien }}</span></p>
             </div>
 
-            <a href="{{ route('recap.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm">
+            <a href="{{ route('recap.index') }}" class="btn-cancel-nav inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Batal & Kembali
             </a>
         </div>
 
-        <form action="{{ route('recap.update', $recap->id) }}" method="POST" id="recap-form">
+        <form action="{{ route('recap.update', $recap->id) }}" method="POST" id="recap-form" novalidate>
             @csrf
             @method('PUT')
 
@@ -68,29 +68,37 @@
                                     @endphp
                                     <tr class="recap-row group hover:bg-slate-50/60 transition-colors">
                                         <td class="py-4 px-4 align-top">
-                                            <input type="date" name="items[{{ $index }}][tanggal_item]" value="{{ $item->tanggal_item ? $item->tanggal_item->format('Y-m-d') : '' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                            <div class="input-field-container">
+                                                <input type="date" name="items[{{ $index }}][tanggal_item]" value="{{ $item->tanggal_item ? $item->tanggal_item->format('Y-m-d') : '' }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                            </div>
                                         </td>
                                         <td class="py-4 px-4 align-top">
-                                            <div class="flex flex-col gap-1.5">
-                                                <input type="text" name="items[{{ $index }}][material]" value="{{ $item->material }}" placeholder="Nama item / pengeluaran..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all" required>
+                                            <div class="flex flex-col gap-1.5 input-field-container">
+                                                <input type="text" name="items[{{ $index }}][material]" value="{{ $item->material }}" placeholder="Nama item / pengeluaran..." class="input-material w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
                                                 <input type="text" name="items[{{ $index }}][detail]" value="{{ $item->detail }}" placeholder="Spesifikasi / catatan (opsional)" class="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-600 placeholder-slate-300 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
                                             </div>
                                         </td>
                                         <td class="py-4 px-4 align-top">
-                                            <select name="items[{{ $index }}][kategori]" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer">
-                                                <option value="material bangunan" {{ $catVal === 'material bangunan' ? 'selected' : '' }}>Material Bangunan</option>
-                                                <option value="material cat" {{ $catVal === 'material cat' ? 'selected' : '' }}>Material Cat</option>
-                                                <option value="upah" {{ $catVal === 'upah' ? 'selected' : '' }}>Upah</option>
-                                            </select>
-                                        </td>
-                                        <td class="py-4 px-4 align-top">
-                                            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 group-hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500 transition-all">
-                                                <span class="text-slate-400 text-[10px] font-bold mr-1.5">RP</span>
-                                                <input type="number" name="items[{{ $index }}][harga]" value="{{ (int)$item->harga }}" placeholder="0" class="input-harga w-full border-none focus:ring-0 p-0 text-xs text-right font-bold text-slate-800 bg-transparent outline-none" required>
+                                            <div class="input-field-container">
+                                                <select name="items[{{ $index }}][kategori]" class="input-kategori w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer">
+                                                    <option value="material bangunan" {{ $catVal === 'material bangunan' ? 'selected' : '' }}>Material Bangunan</option>
+                                                    <option value="material cat" {{ $catVal === 'material cat' ? 'selected' : '' }}>Material Cat</option>
+                                                    <option value="upah" {{ $catVal === 'upah' ? 'selected' : '' }}>Upah</option>
+                                                </select>
                                             </div>
                                         </td>
                                         <td class="py-4 px-4 align-top">
-                                            <input type="number" name="items[{{ $index }}][qty]" value="{{ $item->qty }}" step="0.01" class="input-qty w-full border border-slate-200 bg-slate-50 group-hover:bg-white rounded-xl py-2 px-2 text-xs text-center font-bold text-slate-800 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all" required>
+                                            <div class="input-field-container">
+                                                <div class="input-harga-wrapper flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 group-hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500 transition-all">
+                                                    <span class="text-slate-400 text-[10px] font-bold mr-1.5">RP</span>
+                                                    <input type="number" name="items[{{ $index }}][harga]" value="{{ (int)$item->harga }}" placeholder="0" class="input-harga w-full border-none focus:ring-0 p-0 text-xs text-right font-bold text-slate-800 bg-transparent outline-none">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-4 align-top">
+                                            <div class="input-field-container">
+                                                <input type="number" name="items[{{ $index }}][qty]" value="{{ $item->qty }}" step="0.01" class="input-qty w-full border border-slate-200 bg-slate-50 group-hover:bg-white rounded-xl py-2 px-2 text-xs text-center font-bold text-slate-800 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                            </div>
                                         </td>
                                         <td class="py-4 px-4 text-right align-top pt-6">
                                             <span class="input-total-text text-xs font-black text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
@@ -157,29 +165,37 @@
 <template id="row-template">
     <tr class="recap-row group hover:bg-slate-50/60 transition-colors">
         <td class="py-4 px-4 align-top">
-            <input type="date" name="items[INDEX][tanggal_item]" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+            <div class="input-field-container">
+                <input type="date" name="items[INDEX][tanggal_item]" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+            </div>
         </td>
         <td class="py-4 px-4 align-top">
-            <div class="flex flex-col gap-1.5">
-                <input type="text" name="items[INDEX][material]" placeholder="Nama item / pengeluaran..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all" required>
+            <div class="flex flex-col gap-1.5 input-field-container">
+                <input type="text" name="items[INDEX][material]" placeholder="Nama item / pengeluaran..." class="input-material w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
                 <input type="text" name="items[INDEX][detail]" placeholder="Spesifikasi / catatan (opsional)" class="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-600 placeholder-slate-300 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
             </div>
         </td>
         <td class="py-4 px-4 align-top">
-            <select name="items[INDEX][kategori]" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer">
-                <option value="material bangunan">Material Bangunan</option>
-                <option value="material cat">Material Cat</option>
-                <option value="upah">Upah</option>
-            </select>
-        </td>
-        <td class="py-4 px-4 align-top">
-            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 group-hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500 transition-all">
-                <span class="text-slate-400 text-[10px] font-bold mr-1.5">RP</span>
-                <input type="number" name="items[INDEX][harga]" placeholder="0" class="input-harga w-full border-none focus:ring-0 p-0 text-xs text-right font-bold text-slate-800 bg-transparent outline-none" required>
+            <div class="input-field-container">
+                <select name="items[INDEX][kategori]" class="input-kategori w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer">
+                    <option value="material bangunan">Material Bangunan</option>
+                    <option value="material cat">Material Cat</option>
+                    <option value="upah">Upah</option>
+                </select>
             </div>
         </td>
         <td class="py-4 px-4 align-top">
-            <input type="number" name="items[INDEX][qty]" value="1" step="0.01" class="input-qty w-full border border-slate-200 bg-slate-50 group-hover:bg-white rounded-xl py-2 px-2 text-xs text-center font-bold text-slate-800 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all" required>
+            <div class="input-field-container">
+                <div class="input-harga-wrapper flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 group-hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500 transition-all">
+                    <span class="text-slate-400 text-[10px] font-bold mr-1.5">RP</span>
+                    <input type="number" name="items[INDEX][harga]" placeholder="0" class="input-harga w-full border-none focus:ring-0 p-0 text-xs text-right font-bold text-slate-800 bg-transparent outline-none">
+                </div>
+            </div>
+        </td>
+        <td class="py-4 px-4 align-top">
+            <div class="input-field-container">
+                <input type="number" name="items[INDEX][qty]" value="1" step="0.01" class="input-qty w-full border border-slate-200 bg-slate-50 group-hover:bg-white rounded-xl py-2 px-2 text-xs text-center font-bold text-slate-800 outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+            </div>
         </td>
         <td class="py-4 px-4 text-right align-top pt-6">
             <span class="input-total-text text-xs font-black text-slate-900">Rp 0</span>
@@ -194,22 +210,90 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const recapForm = document.getElementById('recap-form');
     const rowsContainer = document.getElementById('recap-rows');
     const addRowBtn = document.getElementById('add-row-btn');
     const template = document.getElementById('row-template').innerHTML;
     const grandTotalOffer = parseFloat("{{ $recap->total_penawaran_klien }}") || 0;
 
     let rowIndex = {{ $recap->items->count() }} + 100;
+    let isFormDirty = false;
+    let isSubmitting = false;
+
+    // --- Notifikasi Toast Kustom ---
+    function showValidationToast(message) {
+        let toast = document.getElementById('validation-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'validation-toast';
+            toast.className = 'fixed top-5 right-5 z-[9999] flex items-center gap-3 bg-red-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-0 text-sm font-semibold max-w-md border border-red-500';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `
+            <div class="flex items-center justify-center w-8 h-8 bg-red-500 rounded-full flex-shrink-0 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div class="flex-1 text-xs leading-snug">${message}</div>
+            <button type="button" class="text-white hover:text-red-200 text-lg font-bold ml-2 leading-none" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        toast.classList.remove('opacity-0', '-translate-y-4');
+        toast.classList.add('opacity-100', 'translate-y-0');
+
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+            if (toast && toast.parentElement) {
+                toast.classList.add('opacity-0', '-translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4500);
+    }
+
+    function clearAllErrors() {
+        document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+        document.querySelectorAll('.field-error-text').forEach(el => el.remove());
+    }
+
+    function markFieldError(err) {
+        const el = err.element;
+        if (!el) return;
+
+        const targetBorder = el.classList.contains('input-harga') ? (el.closest('.input-harga-wrapper') || el) : el;
+        targetBorder.classList.add('field-error');
+
+        const container = el.closest('.input-field-container') || el.parentElement;
+        if (container && !container.querySelector('.field-error-text')) {
+            const msgEl = document.createElement('p');
+            msgEl.className = 'field-error-text text-[11px] text-red-500 font-semibold mt-1';
+            msgEl.textContent = err.message;
+            container.appendChild(msgEl);
+        }
+
+        const clearFn = function() {
+            targetBorder.classList.remove('field-error');
+            if (container) {
+                const msgEl = container.querySelector('.field-error-text');
+                if (msgEl) msgEl.remove();
+            }
+            el.removeEventListener('input', clearFn);
+            el.removeEventListener('change', clearFn);
+        };
+
+        el.addEventListener('input', clearFn);
+        el.addEventListener('change', clearFn);
+    }
 
     function formatRupiah(angka) { return Math.floor(angka).toLocaleString('id-ID'); }
 
     function calculateTotals() {
         let totalRecap = 0;
         document.querySelectorAll('.recap-row').forEach(row => {
-            const harga = parseFloat(row.querySelector('.input-harga').value) || 0;
-            const qty = parseFloat(row.querySelector('.input-qty').value) || 0;
+            const harga = parseFloat(row.querySelector('.input-harga')?.value) || 0;
+            const qty = parseFloat(row.querySelector('.input-qty')?.value) || 0;
             const subtotal = harga * qty;
-            row.querySelector('.input-total-text').textContent = 'Rp ' + formatRupiah(subtotal);
+            const textEl = row.querySelector('.input-total-text');
+            if (textEl) textEl.textContent = 'Rp ' + formatRupiah(subtotal);
             totalRecap += subtotal;
         });
         const margin = grandTotalOffer - totalRecap;
@@ -230,18 +314,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function bindRowEvents(row) {
         row.querySelector('.remove-row-btn').addEventListener('click', () => {
+            isFormDirty = true;
             row.remove();
             calculateTotals();
         });
         row.querySelectorAll('input, select').forEach(input => {
-            input.addEventListener('input', calculateTotals);
-            input.addEventListener('change', calculateTotals);
+            input.addEventListener('input', () => {
+                isFormDirty = true;
+                calculateTotals();
+            });
+            input.addEventListener('change', () => {
+                isFormDirty = true;
+                calculateTotals();
+            });
         });
     }
 
     document.querySelectorAll('.recap-row').forEach(row => bindRowEvents(row));
 
     addRowBtn.addEventListener('click', () => {
+        isFormDirty = true;
         const html = template.replace(/INDEX/g, rowIndex++);
         rowsContainer.insertAdjacentHTML('beforeend', html);
         bindRowEvents(rowsContainer.lastElementChild);
@@ -250,32 +342,182 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calculateTotals();
 
-    // --- Dirty Form Protection & Anti Double Submit ---
-    let isFormDirty = false;
-    let isSubmitting = false;
+    // --- Validasi Rekapan Proyek ---
+    function validateRecapForm() {
+        clearAllErrors();
+        const errors = [];
+        const rows = document.querySelectorAll('.recap-row');
 
-    const recapForm = document.getElementById('recap-form');
-    if (recapForm) {
-        recapForm.addEventListener('input', function() { isFormDirty = true; });
-        recapForm.addEventListener('change', function() { isFormDirty = true; });
-        recapForm.addEventListener('submit', function() {
-            if (recapForm.checkValidity && !recapForm.checkValidity()) {
-                isSubmitting = false;
-                return;
+        if (rows.length === 0) {
+            errors.push({
+                element: addRowBtn,
+                scrollTarget: addRowBtn,
+                message: 'Silakan tambahkan minimal 1 baris pengeluaran rekapan.'
+            });
+            return errors;
+        }
+
+        let anyRowFilled = false;
+        rows.forEach(row => {
+            const material = row.querySelector('.input-material');
+            const harga = row.querySelector('.input-harga');
+            const matVal = material ? material.value.trim() : '';
+            const hrgVal = harga ? harga.value.trim() : '';
+            if (matVal !== '' || (hrgVal !== '' && parseFloat(hrgVal) > 0)) {
+                anyRowFilled = true;
             }
+        });
+
+        if (!anyRowFilled) {
+            const firstRow = rows[0];
+            const material = firstRow.querySelector('.input-material');
+            const harga = firstRow.querySelector('.input-harga');
+            const qty = firstRow.querySelector('.input-qty');
+
+            errors.push({
+                element: material,
+                scrollTarget: firstRow,
+                message: 'Nama item / pengeluaran wajib diisi.'
+            });
+
+            if (!harga.value || parseFloat(harga.value) <= 0) {
+                errors.push({
+                    element: harga,
+                    scrollTarget: firstRow,
+                    message: 'Harga satuan wajib diisi.'
+                });
+            }
+
+            if (!qty.value || parseFloat(qty.value) <= 0) {
+                errors.push({
+                    element: qty,
+                    scrollTarget: firstRow,
+                    message: 'Qty minimal 1.'
+                });
+            }
+
+            return errors;
+        }
+
+        rows.forEach((row, index) => {
+            const material = row.querySelector('.input-material');
+            const harga = row.querySelector('.input-harga');
+            const qty = row.querySelector('.input-qty');
+
+            const matVal = material ? material.value.trim() : '';
+            const hrgVal = harga ? harga.value.trim() : '';
+            const qtyVal = qty ? qty.value.trim() : '';
+
+            const isRowEmpty = matVal === '' && (hrgVal === '' || parseFloat(hrgVal) === 0);
+
+            if (!isRowEmpty) {
+                if (!matVal) {
+                    errors.push({
+                        element: material,
+                        scrollTarget: row,
+                        message: `Nama item baris #${index + 1} wajib diisi.`
+                    });
+                }
+
+                if (!hrgVal || isNaN(parseFloat(hrgVal)) || parseFloat(hrgVal) <= 0) {
+                    errors.push({
+                        element: harga,
+                        scrollTarget: row,
+                        message: `Harga satuan baris #${index + 1} wajib diisi (minimal Rp 1).`
+                    });
+                }
+
+                if (!qtyVal || isNaN(parseFloat(qtyVal)) || parseFloat(qtyVal) <= 0) {
+                    errors.push({
+                        element: qty,
+                        scrollTarget: row,
+                        message: `Qty baris #${index + 1} minimal 1.`
+                    });
+                }
+            }
+        });
+
+        return errors;
+    }
+
+    if (recapForm) {
+        recapForm.addEventListener('input', () => { isFormDirty = true; });
+        recapForm.addEventListener('change', () => { isFormDirty = true; });
+
+        recapForm.addEventListener('submit', function(e) {
+            const errors = validateRecapForm();
+
+            if (errors.length > 0) {
+                e.preventDefault();
+                isSubmitting = false;
+
+                errors.forEach(err => markFieldError(err));
+                showValidationToast('Ada form yang belum diisi! Halaman secara otomatis diarahkan ke bagian yang belum lengkap.');
+
+                const firstErr = errors[0];
+                const scrollTarget = firstErr.scrollTarget || firstErr.element;
+
+                if (scrollTarget) {
+                    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    scrollTarget.classList.add('field-error-shake');
+                    setTimeout(() => scrollTarget.classList.remove('field-error-shake'), 600);
+                }
+
+                setTimeout(() => {
+                    if (firstErr.element && typeof firstErr.element.focus === 'function') {
+                        firstErr.element.focus();
+                    }
+                }, 350);
+
+                return false;
+            }
+
+            // Bersihkan baris yang 100% kosong
+            const rows = document.querySelectorAll('.recap-row');
+            rows.forEach(row => {
+                const matVal = row.querySelector('.input-material')?.value.trim() || '';
+                const hrgVal = row.querySelector('.input-harga')?.value.trim() || '';
+                if (matVal === '' && (hrgVal === '' || parseFloat(hrgVal) === 0)) {
+                    row.remove();
+                }
+            });
+            calculateTotals();
+
             isSubmitting = true;
+            const submitBtn = recapForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-black inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Menyimpan Perubahan Rekapan...
+                `;
+            }
         });
     }
 
-    if (addRowBtn) {
-        addRowBtn.addEventListener('click', function() { isFormDirty = true; });
-    }
-
+    // --- Proteksi Beforeunload & Konfirmasi Navigasi ---
     window.addEventListener('beforeunload', function(e) {
         if (isFormDirty && !isSubmitting) {
             e.preventDefault();
             e.returnValue = '';
         }
+    });
+
+    document.querySelectorAll('.btn-cancel-nav, a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+            if (isFormDirty && !isSubmitting) {
+                if (!confirm('Anda memiliki perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan rekapan?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
     });
 });
 </script>
@@ -285,5 +527,19 @@ document.addEventListener('DOMContentLoaded', function() {
     body { font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.01em; }
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
+
+    @keyframes fieldShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-6px); }
+        40%, 80% { transform: translateX(6px); }
+    }
+    .field-error {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+    }
+    .field-error-shake {
+        animation: fieldShake 0.4s ease-in-out;
+    }
 </style>
 @endsection

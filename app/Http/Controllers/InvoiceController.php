@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Offer;
 use App\Models\Invoice;
 use App\Models\Product; // Anda meng-import ini, pastikan modelnya ada jika digunakan
+use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
@@ -608,8 +609,7 @@ class InvoiceController extends Controller
 
     /**
      * Admin menandai satu atau beberapa invoice sebagai "Persiapkan".
-     * Invoice yang ditandai akan muncul paling atas di view Driver & Staff Gudang
-     * dengan badge notifikasi orange.
+     * Hanya invoice yang belum pernah dikonfirmasi Staff Gudang yang dapat dipersiapkan.
      */
     public function persiapkan(Request $request)
     {
@@ -620,25 +620,133 @@ class InvoiceController extends Controller
 
         $ids = $request->input('selected_invoices');
 
-        Invoice::whereIn('id', $ids)->update([
-            'is_persiapan'              => true,
-            'persiapan_at'              => now(),
-            'persiapan_confirmed_at'    => null, // Reset konfirmasi saat dipersiapkan ulang
+        // Invoice yang sudah dikonfirmasi oleh Staff Gudang tidak boleh dipersiapkan ulang
+        $invoices = Invoice::whereIn('id', $ids)
+            ->whereNull('persiapan_confirmed_at')
+            ->get();
+
+        if ($invoices->isEmpty()) {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Semua invoice yang dipilih sudah pernah dikonfirmasi oleh Staff Gudang dan tidak dapat dipersiapkan ulang.');
+        }
+
+        // =========================================================================
+        // VALIDASI STOK: Jika stok < total qty produk di invoice, invoice tidak bisa dipersiapkan
+        // =========================================================================
+        $stokKurangErrors = [];
+
+        // 1. Cek ketersediaan stok per masing-masing invoice
+        foreach ($invoices as $inv) {
+            if (!$inv->offer || !$inv->offer->items) {
+                continue;
+            }
+
+            // Kumpulkan total qty per produk untuk invoice ini
+            $kebutuhanInvoice = [];
+            foreach ($inv->offer->items as $item) {
+                if (empty($item->nama_produk)) {
+                    continue;
+                }
+                $qty = (int) round((float) ($item->volume ?? 0));
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $namaProduk = trim($item->nama_produk);
+                $kebutuhanInvoice[$namaProduk] = ($kebutuhanInvoice[$namaProduk] ?? 0) + $qty;
+            }
+
+            // Cek setiap produk terdaftar terhadap stok di database
+            foreach ($kebutuhanInvoice as $namaProduk => $qtyDibutuhkan) {
+                $product = Product::where('nama_produk', $namaProduk)->first();
+                if (!$product) {
+                    $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
+                }
+
+                if ($product) {
+                    if ($product->stok < $qtyDibutuhkan) {
+                        $stokKurangErrors[] = "Invoice {$inv->no_invoice}: Produk '{$product->nama_produk}' (Stok tersedia: {$product->stok}, Dibutuhkan: {$qtyDibutuhkan})";
+                    }
+                }
+            }
+        }
+
+        // 2. Jika ada beberapa invoice dipilih sekaligus, cek juga akumulasi total gabungan
+        if (empty($stokKurangErrors) && $invoices->count() > 1) {
+            $totalKebutuhanGabungan = [];
+            foreach ($invoices as $inv) {
+                if (!$inv->offer || !$inv->offer->items) {
+                    continue;
+                }
+                foreach ($inv->offer->items as $item) {
+                    if (empty($item->nama_produk)) {
+                        continue;
+                    }
+                    $qty = (int) round((float) ($item->volume ?? 0));
+                    if ($qty <= 0) {
+                        continue;
+                    }
+
+                    $namaProduk = trim($item->nama_produk);
+                    $totalKebutuhanGabungan[$namaProduk] = ($totalKebutuhanGabungan[$namaProduk] ?? 0) + $qty;
+                }
+            }
+
+            foreach ($totalKebutuhanGabungan as $namaProduk => $totalQty) {
+                $product = Product::where('nama_produk', $namaProduk)->first();
+                if (!$product) {
+                    $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
+                }
+
+                if ($product && $product->stok < $totalQty) {
+                    $stokKurangErrors[] = "Total kebutuhan produk '{$product->nama_produk}' dari seluruh invoice yang dipilih adalah {$totalQty}, sedangkan total stok tersedia hanya {$product->stok}.";
+                }
+            }
+        }
+
+        // Jika ditemukan stok tidak mencukupi, gagalkan proses persiapan
+        if (!empty($stokKurangErrors)) {
+            $pesan = "Invoice tidak dapat dipersiapkan karena total stok kurang dari total qty produk yang dibutuhkan:\n• " . implode("\n• ", $stokKurangErrors);
+            return redirect()->route('invoice.histori')->with('error', $pesan);
+        }
+
+        $validIds = $invoices->pluck('id')->toArray();
+
+        Invoice::whereIn('id', $validIds)->update([
+            'is_persiapan'           => true,
+            'persiapan_at'           => now(),
+            'persiapan_confirmed_at' => null,
         ]);
 
-        $count = count($ids);
-        return redirect()->route('invoice.histori')
-            ->with('success', "{$count} invoice berhasil ditandai sebagai \"Persiapkan\". Driver dan Staff Gudang akan menerima notifikasi.");
+        $count = count($validIds);
+        $pesan = "{$count} invoice berhasil ditandai sebagai \"Persiapkan\". Driver dan Staff Gudang akan menerima notifikasi.";
+        if (count($ids) > $count) {
+            $pesan .= " Beberapa invoice dilewati karena sudah dikonfirmasi oleh Staff Gudang.";
+        }
+
+        return redirect()->route('invoice.histori')->with('success', $pesan);
     }
 
     /**
      * Super User / Admin membatalkan status "Persiapkan" pada satu invoice.
+     * Invoice yang sudah dikonfirmasi oleh Staff Gudang TIDAK BISA dibatalkan lagi.
      */
     public function batalPersiapkan(Invoice $invoice)
     {
         if (!auth()->check() || auth()->user()->role !== 'admin') {
             return redirect()->route('invoice.histori')
                 ->with('error', 'Hanya Super Admin yang dapat membatalkan status persiapan.');
+        }
+
+        // Invoice yang sudah dikonfirmasi oleh staf gudang tidak bisa dibatalkan lagi
+        if ($invoice->persiapan_confirmed_at !== null) {
+            return redirect()->route('invoice.histori')
+                ->with('error', "Invoice {$invoice->no_invoice} sudah dikonfirmasi oleh Staff Gudang dan tidak dapat dibatalkan lagi.");
+        }
+
+        if (!$invoice->is_persiapan) {
+            return redirect()->route('invoice.histori')
+                ->with('error', "Invoice {$invoice->no_invoice} tidak sedang dalam status persiapan.");
         }
 
         $invoice->update([
@@ -653,6 +761,7 @@ class InvoiceController extends Controller
 
     /**
      * Super User / Admin membatalkan status "Persiapkan" pada beberapa invoice sekaligus (bulk).
+     * Invoice yang sudah dikonfirmasi oleh Staff Gudang TIDAK BISA dibatalkan lagi.
      */
     public function batalPersiapkanBulk(Request $request)
     {
@@ -668,19 +777,76 @@ class InvoiceController extends Controller
 
         $ids = $request->input('selected_invoices');
 
-        Invoice::whereIn('id', $ids)->update([
+        // Filter hanya invoice yang sedang dalam status persiapan dan BELUM dikonfirmasi staf gudang
+        $invoices = Invoice::whereIn('id', $ids)
+            ->where('is_persiapan', true)
+            ->whereNull('persiapan_confirmed_at')
+            ->get();
+
+        if ($invoices->isEmpty()) {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Tidak ada invoice yang dapat dibatalkan. Invoice yang sudah dikonfirmasi oleh Staff Gudang tidak dapat dibatalkan lagi.');
+        }
+
+        $validIds = $invoices->pluck('id')->toArray();
+        $count = count($validIds);
+
+        Invoice::whereIn('id', $validIds)->update([
             'is_persiapan'           => false,
             'persiapan_at'           => null,
             'persiapan_confirmed_at' => null,
         ]);
 
-        $count = count($ids);
-        return redirect()->route('invoice.histori')
-            ->with('success', "Status persiapan untuk {$count} invoice berhasil dibatalkan.");
+        $pesan = "Status persiapan untuk {$count} invoice berhasil dibatalkan.";
+        if (count($ids) > $count) {
+            $pesan .= " Beberapa invoice dilewati karena sudah dikonfirmasi oleh Staff Gudang.";
+        }
+
+        return redirect()->route('invoice.histori')->with('success', $pesan);
     }
 
     /**
-     * Staff Gudang mengkonfirmasi bahwa invoice yang dipersiapkan sudah diterima/diproses.
+     * Kurangi stok produk terdaftar di database secara otomatis berdasarkan item invoice.
+     */
+    private function kurangiStokProdukDariInvoice(Invoice $invoice)
+    {
+        // Pastikan relasi offer.items termuat
+        if (!$invoice->relationLoaded('offer')) {
+            $invoice->load(['offer.items']);
+        } elseif ($invoice->offer && !$invoice->offer->relationLoaded('items')) {
+            $invoice->offer->load('items');
+        }
+
+        if ($invoice->offer && $invoice->offer->items) {
+            foreach ($invoice->offer->items as $item) {
+                if (empty($item->nama_produk)) {
+                    continue;
+                }
+
+                $qty = (int) round((float) ($item->volume ?? 0));
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $namaProduk = trim($item->nama_produk);
+
+                // Cari produk di tabel products (exact match atau case-insensitive)
+                $product = Product::where('nama_produk', $namaProduk)->first();
+                if (!$product) {
+                    $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
+                }
+
+                // Jika produk terdaftar di tabel products, kurangi stoknya
+                if ($product) {
+                    $product->decrement('stok', $qty);
+                }
+            }
+        }
+    }
+
+    /**
+     * Staff Gudang mengkonfirmasi bahwa invoice yang dipersiapkan sudah selesai dipersiapkan.
+     * Secara otomatis memotong stok produk jika produk tersebut terdaftar.
      */
     public function konfirmasiPersiapan(Invoice $invoice)
     {
@@ -690,22 +856,32 @@ class InvoiceController extends Controller
                 ->with('error', 'Hanya Staff Gudang yang dapat mengkonfirmasi persiapan.');
         }
 
+        if ($invoice->persiapan_confirmed_at !== null) {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Invoice ini sudah pernah dikonfirmasi sebelumnya.');
+        }
+
         if (!$invoice->is_persiapan) {
             return redirect()->route('invoice.histori')
                 ->with('error', 'Invoice ini tidak dalam status Persiapan.');
         }
 
-        $invoice->update([
-            'is_persiapan'           => false,
-            'persiapan_confirmed_at' => now(),
-        ]);
+        DB::transaction(function () use ($invoice) {
+            $this->kurangiStokProdukDariInvoice($invoice);
+
+            $invoice->update([
+                'is_persiapan'           => false,
+                'persiapan_confirmed_at' => now(),
+            ]);
+        });
 
         return redirect()->route('invoice.histori')
-            ->with('success', "Invoice {$invoice->no_invoice} telah dikonfirmasi. Status persiapan selesai.");
+            ->with('success', "Invoice {$invoice->no_invoice} telah dikonfirmasi dan stok produk berhasil dipotong. Status persiapan selesai.");
     }
 
     /**
      * Staff Gudang mengkonfirmasi semua notifikasi persiapan sekaligus.
+     * Secara otomatis memotong stok produk yang terdaftar untuk semua invoice terkait.
      */
     public function konfirmasiSemuaPersiapan(Request $request)
     {
@@ -714,15 +890,31 @@ class InvoiceController extends Controller
                 ->with('error', 'Hanya Staff Gudang yang dapat mengkonfirmasi persiapan.');
         }
 
-        $count = Invoice::where('is_persiapan', true)->count();
+        $invoices = Invoice::where('is_persiapan', true)
+            ->whereNull('persiapan_confirmed_at')
+            ->with(['offer.items'])
+            ->get();
 
-        Invoice::where('is_persiapan', true)->update([
-            'is_persiapan'           => false,
-            'persiapan_confirmed_at' => now(),
-        ]);
+        $count = $invoices->count();
+
+        if ($count === 0) {
+            return redirect()->route('invoice.histori')
+                ->with('error', 'Tidak ada invoice dalam status persiapan yang perlu dikonfirmasi.');
+        }
+
+        DB::transaction(function () use ($invoices) {
+            foreach ($invoices as $inv) {
+                $this->kurangiStokProdukDariInvoice($inv);
+
+                $inv->update([
+                    'is_persiapan'           => false,
+                    'persiapan_confirmed_at' => now(),
+                ]);
+            }
+        });
 
         return redirect()->route('invoice.histori')
-            ->with('success', "Semua notifikasi persiapan ({$count} invoice) telah berhasil dikonfirmasi.");
+            ->with('success', "Semua notifikasi persiapan ({$count} invoice) telah berhasil dikonfirmasi dan stok produk berhasil dipotong.");
     }
 }
 
