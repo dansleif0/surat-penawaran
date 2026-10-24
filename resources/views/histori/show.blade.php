@@ -149,7 +149,6 @@
                                         @if($extHasSingleProduct)
                                         <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Produk</th>
                                         @endif
-                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Volume/M²</th>
                                         @if($extHasSingleProduct)
                                         <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Harga Satuan</th>
                                         @endif
@@ -163,7 +162,6 @@
                                         @if($extHasSingleProduct)
                                         <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $extSingleProd }}</td>
                                         @endif
-                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal text-right align-middle">{{ $exteriorItems->sum('volume') + 0 }}</td>
                                         @if($extHasSingleProduct)
                                         <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap align-middle">
                                             <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($extSinglePrice, 0, ',', '.') }}</span></div>
@@ -202,7 +200,6 @@
                                         @if($intHasSingleProduct)
                                         <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Produk</th>
                                         @endif
-                                        <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Volume/M²</th>
                                         @if($intHasSingleProduct)
                                         <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Harga Satuan</th>
                                         @endif
@@ -216,7 +213,6 @@
                                         @if($intHasSingleProduct)
                                         <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $intSingleProd }}</td>
                                         @endif
-                                        <td class="py-2 px-2 text-xs text-gray-700 leading-normal text-right align-middle">{{ $interiorItems->sum('volume') + 0 }}</td>
                                         @if($intHasSingleProduct)
                                         <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap align-middle">
                                             <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($intSinglePrice, 0, ',', '.') }}</span></div>
@@ -256,7 +252,6 @@
                                     @if($allHasSingleProduct)
                                     <th class="py-2 px-2 font-semibold uppercase text-xs align-middle">Produk</th>
                                     @endif
-                                    <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Volume/M²</th>
                                     @if($allHasSingleProduct)
                                     <th class="py-2 px-2 font-semibold uppercase text-xs text-right align-middle">Harga Satuan</th>
                                     @endif
@@ -270,7 +265,6 @@
                                     @if($allHasSingleProduct)
                                     <td class="py-2 px-2 text-xs text-gray-700 leading-normal align-middle">{{ $allSingleProd }}</td>
                                     @endif
-                                    <td class="py-2 px-2 text-xs text-gray-700 leading-normal text-right align-middle">{{ $allItems->sum('volume') + 0 }}</td>
                                     @if($allHasSingleProduct)
                                     <td class="py-2 px-2 text-xs text-gray-700 leading-normal whitespace-nowrap align-middle">
                                         <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allSinglePrice, 0, ',', '.') }}</span></div>
