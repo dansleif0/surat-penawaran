@@ -200,109 +200,75 @@
         <section class="mt-8 sans text-sm">
             <div class="w-full">
 
-                {{-- JIKA TAMPILKAN DETAIL = FALSE (FORMAT RANGKUMAN BARU) --}}
+                {{-- JIKA TAMPILKAN DETAIL = FALSE (FORMAT RANGKUMAN / NON-DETAIL) --}}
                 @if(!$showDetail)
 
                     @if($isSplit)
                         {{-- 1. EXTERIOR RANGKUMAN --}}
                         @if($exteriorItems->isNotEmpty())
-                        @php
-                            $extDistinctProds = $exteriorItems->pluck('nama_produk')->unique()->filter()->values();
-                            $extHasSingleProduct = ($extDistinctProds->count() === 1);
-                            $extSingleProd = $extHasSingleProduct ? $extDistinctProds->first() : null;
-                            $extSinglePrice = $extHasSingleProduct ? $exteriorItems->first()->harga_per_m2 : null;
-
-                            $extBrands = $exteriorItems->map(function($item) {
-                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
-                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
-                            })->unique()->filter()->values();
-                            $extBrandText = $extBrands->isNotEmpty() ? $extBrands->implode(', ') : 'Jotun';
-                        @endphp
-                        <div class="mb-8 page-break-inside-avoid">
-                            <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Exterior</h4>
-                            <table class="w-full text-left border-collapse mb-4">
-                                <thead class="bg-gray-200 text-black">
-                                    <tr>
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Area Pekerjaan</th>
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Nama Brand</th>
-                                        @if($extHasSingleProduct)
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Produk</th>
-                                        @endif
-                                        @if($extHasSingleProduct)
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Harga Satuan</th>
-                                        @endif
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="border-b border-gray-500">
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle font-medium">Total Pekerjaan Exterior</td>
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $extBrandText }}</td>
-                                        @if($extHasSingleProduct)
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $extSingleProd }}</td>
-                                        @endif
-                                        @if($extHasSingleProduct)
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap align-middle">
-                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($extSinglePrice, 0, ',', '.') }}</span></div>
-                                        </td>
-                                        @endif
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap font-bold align-middle">
-                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalExterior, 0, ',', '.') }}</span></div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="mb-6 page-break-inside-avoid">
+                            <div class="flex items-center gap-2 mb-2.5">
+                                <span class="w-1.5 h-3.5 bg-slate-800 rounded-xs inline-block"></span>
+                                <h4 class="font-bold text-slate-800 uppercase tracking-wider text-xs">Pekerjaan Exterior</h4>
+                            </div>
+                            <div class="overflow-hidden rounded-lg border border-slate-300 shadow-xs">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-slate-800 text-white">
+                                        <tr>
+                                            <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider w-[70%] align-middle">Area Pekerjaan</th>
+                                            <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider text-right w-[30%] whitespace-nowrap align-middle">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white">
+                                        <tr>
+                                            <td class="py-3.5 px-4 align-middle">
+                                                <div class="font-semibold text-slate-800 text-xs tracking-wide">Total Pekerjaan Exterior</div>
+                                                <div class="text-[11px] text-slate-500 font-normal mt-0.5">Jasa Apply & Supply Pengecatan</div>
+                                            </td>
+                                            <td class="py-3.5 px-4 text-right align-middle whitespace-nowrap">
+                                                <div class="flex justify-end items-baseline gap-1.5">
+                                                    <span class="text-xs font-semibold text-slate-500">Rp</span>
+                                                    <span class="text-sm font-extrabold text-slate-900">{{ number_format($totalExterior, 0, ',', '.') }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         @endif
 
                         {{-- 2. INTERIOR RANGKUMAN --}}
                         @if($interiorItems->isNotEmpty())
-                        @php
-                            $intDistinctProds = $interiorItems->pluck('nama_produk')->unique()->filter()->values();
-                            $intHasSingleProduct = ($intDistinctProds->count() === 1);
-                            $intSingleProd = $intHasSingleProduct ? $intDistinctProds->first() : null;
-                            $intSinglePrice = $intHasSingleProduct ? $interiorItems->first()->harga_per_m2 : null;
-
-                            $intBrands = $interiorItems->map(function($item) {
-                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
-                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
-                            })->unique()->filter()->values();
-                            $intBrandText = $intBrands->isNotEmpty() ? $intBrands->implode(', ') : 'Jotun';
-                        @endphp
-                        <div class="mb-8 page-break-inside-avoid">
-                            <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pekerjaan Interior</h4>
-                            <table class="w-full text-left border-collapse mb-4">
-                                <thead class="bg-gray-200 text-black">
-                                    <tr>
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Area Pekerjaan</th>
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Nama Brand</th>
-                                        @if($intHasSingleProduct)
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Produk</th>
-                                        @endif
-                                        @if($intHasSingleProduct)
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Harga Satuan</th>
-                                        @endif
-                                        <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="border-b border-gray-500">
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle font-medium">Total Pekerjaan Interior</td>
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $intBrandText }}</td>
-                                        @if($intHasSingleProduct)
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $intSingleProd }}</td>
-                                        @endif
-                                        @if($intHasSingleProduct)
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap align-middle">
-                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($intSinglePrice, 0, ',', '.') }}</span></div>
-                                        </td>
-                                        @endif
-                                        <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap font-bold align-middle">
-                                            <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalInterior, 0, ',', '.') }}</span></div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="mb-6 page-break-inside-avoid">
+                            <div class="flex items-center gap-2 mb-2.5">
+                                <span class="w-1.5 h-3.5 bg-slate-800 rounded-xs inline-block"></span>
+                                <h4 class="font-bold text-slate-800 uppercase tracking-wider text-xs">Pekerjaan Interior</h4>
+                            </div>
+                            <div class="overflow-hidden rounded-lg border border-slate-300 shadow-xs">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-slate-800 text-white">
+                                        <tr>
+                                            <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider w-[70%] align-middle">Area Pekerjaan</th>
+                                            <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider text-right w-[30%] whitespace-nowrap align-middle">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white">
+                                        <tr>
+                                            <td class="py-3.5 px-4 align-middle">
+                                                <div class="font-semibold text-slate-800 text-xs tracking-wide">Total Pekerjaan Interior</div>
+                                                <div class="text-[11px] text-slate-500 font-normal mt-0.5">Jasa Apply & Supply Pengecatan</div>
+                                            </td>
+                                            <td class="py-3.5 px-4 text-right align-middle whitespace-nowrap">
+                                                <div class="flex justify-end items-baseline gap-1.5">
+                                                    <span class="text-xs font-semibold text-slate-500">Rp</span>
+                                                    <span class="text-sm font-extrabold text-slate-900">{{ number_format($totalInterior, 0, ',', '.') }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         @endif
 
@@ -310,51 +276,34 @@
                         {{-- 3. NON-SPLIT RANGKUMAN --}}
                         @if($offer->items->isNotEmpty())
                         @php
-                            $allItems = $offer->items;
-                            $allDistinctProds = $allItems->pluck('nama_produk')->unique()->filter()->values();
-                            $allHasSingleProduct = ($allDistinctProds->count() === 1);
-                            $allSingleProd = $allHasSingleProduct ? $allDistinctProds->first() : null;
-                            $allSinglePrice = $allHasSingleProduct ? $allItems->first()->harga_per_m2 : null;
-
-                            $allBrands = $allItems->map(function($item) {
-                                $p = \App\Models\Product::where('nama_produk', $item->nama_produk)->first();
-                                return $p && !empty($p->performa) ? $p->performa : 'Jotun';
-                            })->unique()->filter()->values();
-                            $allBrandText = $allBrands->isNotEmpty() ? $allBrands->implode(', ') : 'Jotun';
-                            $allTotal = $allItems->sum(function($item) { return $item->volume * $item->harga_per_m2; });
+                            $allTotal = $offer->items->sum(function($item) { return $item->volume * $item->harga_per_m2; });
                         @endphp
-                        <table class="w-full text-left border-collapse page-break-inside-avoid mb-6">
-                            <thead class="bg-gray-200 text-black">
-                                <tr>
-                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Area Pekerjaan</th>
-                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Nama Brand</th>
-                                    @if($allHasSingleProduct)
-                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] whitespace-nowrap align-middle">Produk</th>
-                                    @endif
-                                    @if($allHasSingleProduct)
-                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Harga Satuan</th>
-                                    @endif
-                                    <th class="py-2 px-1 font-semibold uppercase text-[10px] text-right whitespace-nowrap align-middle">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-gray-500">
-                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle font-medium">Total Pekerjaan</td>
-                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $allBrandText }}</td>
-                                    @if($allHasSingleProduct)
-                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none align-middle">{{ $allSingleProd }}</td>
-                                    @endif
-                                    @if($allHasSingleProduct)
-                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap align-middle">
-                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allSinglePrice, 0, ',', '.') }}</span></div>
-                                    </td>
-                                    @endif
-                                    <td class="py-1 px-1 text-[10px] text-gray-700 leading-none whitespace-nowrap font-bold align-middle">
-                                        <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($allTotal, 0, ',', '.') }}</span></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="mb-6 page-break-inside-avoid">
+                            <div class="overflow-hidden rounded-lg border border-slate-300 shadow-xs">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-slate-800 text-white">
+                                        <tr>
+                                            <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider w-[70%] align-middle">Area Pekerjaan</th>
+                                            <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider text-right w-[30%] whitespace-nowrap align-middle">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white">
+                                        <tr>
+                                            <td class="py-3.5 px-4 align-middle">
+                                                <div class="font-semibold text-slate-800 text-xs tracking-wide">Total Pekerjaan</div>
+                                                <div class="text-[11px] text-slate-500 font-normal mt-0.5">Jasa Apply & Supply Pengecatan</div>
+                                            </td>
+                                            <td class="py-3.5 px-4 text-right align-middle whitespace-nowrap">
+                                                <div class="flex justify-end items-baseline gap-1.5">
+                                                    <span class="text-xs font-semibold text-slate-500">Rp</span>
+                                                    <span class="text-sm font-extrabold text-slate-900">{{ number_format($allTotal, 0, ',', '.') }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                         @endif
                     @endif
 
@@ -522,42 +471,56 @@
 
                 {{-- TABEL JASA (DENGAN TOTAL) --}}
                 @if($offer->jasaItems->isNotEmpty())
-                <div class="mt-4 page-break-inside-avoid">
-                    <h4 class="font-bold text-gray-800 mb-2 uppercase border-b-2 border-gray-800 inline-block text-sm">Pengerjaan Tambahan</h4>
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-200 text-black">
-                            <tr>
-                                <th class="py-2 px-1 font-semibold uppercase text-xs w-[50%] align-middle" colspan="3">Deskripsi Pengerjaan</th>
-                                <th class="py-2 px-1 font-semibold uppercase text-xs text-right w-[10%] align-middle">Vol/Sat</th>
-                                <th class="py-2 px-1 font-semibold uppercase text-xs text-right w-[20%] align-middle">Harga Satuan</th>
-                                <th class="py-2 px-1 font-semibold uppercase text-xs text-right w-[20%] align-middle">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($offer->jasaItems as $jasa)
-                            <tr class="border-b border-gray-200">
-                                <td class="py-1 px-1 font-medium text-gray-800 text-xs leading-none align-middle" colspan="3">{{ $jasa->nama_jasa }}</td>
-                                <td class="py-1 px-1 text-right text-xs leading-none align-middle whitespace-nowrap">{{ $jasa->volume + 0 }} {{ $jasa->satuan }}</td>
-                                <td class="py-1 px-1 text-xs leading-none whitespace-nowrap align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($jasa->harga_satuan, 0, ',', '.') }}</span></div>
-                                </td>
-                                <td class="py-1 px-1 text-xs leading-none whitespace-nowrap font-bold text-gray-900 align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($jasa->harga_jasa, 0, ',', '.') }}</span></div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                        @if($showTotal)
-                        <tfoot>
-                            <tr class="bg-gray-100 font-bold text-gray-800">
-                                <td colspan="5" class="py-1 px-1 text-xs text-right uppercase align-middle">Total Pengerjaan Tambahan</td>
-                                <td class="py-1 px-1 text-xs text-right whitespace-nowrap align-middle">
-                                    <div class="flex justify-end gap-1 w-full"><span>Rp</span><span>{{ number_format($totalJasa, 0, ',', '.') }}</span></div>
-                                </td>
-                            </tr>
-                        </tfoot>
-                        @endif
-                    </table>
+                <div class="mb-6 page-break-inside-avoid">
+                    <div class="flex items-center gap-2 mb-2.5">
+                        <span class="w-1.5 h-3.5 bg-slate-800 rounded-xs inline-block"></span>
+                        <h4 class="font-bold text-slate-800 uppercase tracking-wider text-xs">Pengerjaan Tambahan</h4>
+                    </div>
+                    <div class="overflow-hidden rounded-lg border border-slate-300 shadow-xs">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-800 text-white">
+                                <tr>
+                                    <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider align-middle w-[50%]" colspan="3">Deskripsi Pengerjaan</th>
+                                    <th class="py-2.5 px-3 font-semibold uppercase text-xs tracking-wider text-right align-middle w-[15%]">Vol / Sat</th>
+                                    <th class="py-2.5 px-3 font-semibold uppercase text-xs tracking-wider text-right align-middle w-[15%]">Harga Satuan</th>
+                                    <th class="py-2.5 px-4 font-semibold uppercase text-xs tracking-wider text-right align-middle w-[20%]">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 bg-white">
+                                @foreach($offer->jasaItems as $jasa)
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="py-2.5 px-4 font-medium text-slate-800 text-xs align-middle" colspan="3">{{ $jasa->nama_jasa }}</td>
+                                    <td class="py-2.5 px-3 text-right text-xs text-slate-600 align-middle whitespace-nowrap">{{ $jasa->volume + 0 }} {{ $jasa->satuan }}</td>
+                                    <td class="py-2.5 px-3 text-xs align-middle whitespace-nowrap">
+                                        <div class="flex justify-end items-baseline gap-1 w-full">
+                                            <span class="text-[10px] text-slate-400">Rp</span>
+                                            <span class="text-slate-700 font-medium">{{ number_format($jasa->harga_satuan ?? ($jasa->harga_jasa / ($jasa->volume ?: 1)), 0, ',', '.') }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-4 text-xs font-bold text-slate-900 align-middle whitespace-nowrap">
+                                        <div class="flex justify-end items-baseline gap-1 w-full">
+                                            <span class="text-[10px] text-slate-400">Rp</span>
+                                            <span>{{ number_format($jasa->harga_jasa, 0, ',', '.') }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            @if($showTotal)
+                            <tfoot>
+                                <tr class="bg-slate-100 font-bold text-slate-800 border-t border-slate-300">
+                                    <td colspan="5" class="py-2.5 px-4 text-xs text-right uppercase tracking-wider align-middle">Total Pengerjaan Tambahan</td>
+                                    <td class="py-2.5 px-4 text-xs font-extrabold text-slate-900 text-right whitespace-nowrap align-middle">
+                                        <div class="flex justify-end items-baseline gap-1 w-full">
+                                            <span class="text-xs font-semibold text-slate-500">Rp</span>
+                                            <span class="text-sm font-extrabold text-slate-900">{{ number_format($totalJasa, 0, ',', '.') }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                            @endif
+                        </table>
+                    </div>
                 </div>
                 @endif
 
@@ -567,10 +530,10 @@
         @if($showTotal)
         <section class="mt-4 flex justify-end sans" id="grand-total-block">
             <div class="w-full md:w-6/12">
-                <div class="flex justify-between items-center bg-gray-800 text-white p-3 rounded-lg print:bg-white print:text-black print:p-0">
-                    <span class="text-lg font-bold uppercase">Grand Total</span>
-                    <span class="text-xl font-bold whitespace-nowrap flex gap-2">
-                        <span>Rp</span>
+                <div class="flex justify-between items-center bg-slate-800 text-white p-3.5 rounded-lg shadow-sm">
+                    <span class="text-base font-bold uppercase tracking-wider">Grand Total</span>
+                    <span class="text-xl font-black whitespace-nowrap flex items-baseline gap-1.5">
+                        <span class="text-sm font-semibold text-slate-400">Rp</span>
                         <span>{{ number_format($offer->total_keseluruhan, 0, ',', '.') }}</span>
                     </span>
                 </div>
