@@ -37,6 +37,7 @@ class ProductOfferController extends Controller
 
             'items.*.qty'           => 'required|numeric|min:1',
             'items.*.harga_satuan'  => 'required|numeric|min:0',
+            'items.*.diskon'        => 'nullable|numeric|min:0',
             'diskon_global'         => 'nullable|numeric|min:0',
         ]);
 
@@ -64,13 +65,24 @@ class ProductOfferController extends Controller
                 // PERUBAHAN: Tidak lagi mencari Product::findOrFail() karena input bebas
                 $namaProduk  = $itemData['nama_produk'];
 
-                $hargaSatuan = $itemData['harga_satuan'];
-                $qty         = $itemData['qty'];
+                $hargaSatuan = (float)$itemData['harga_satuan'];
+                $qty         = (float)$itemData['qty'];
                 $kodeWarna   = $itemData['kode_warna'] ?? '-';
                 $keterangan  = $itemData['keterangan'] ?? '-';
                 $ukuran      = $itemData['ukuran'] ?? '-';
+                $diskonNominal = (float)($itemData['diskon'] ?? ($itemData['diskon_nilai'] ?? 0));
 
-                $subtotalBaris = ($hargaSatuan * $qty);
+                $subtotalKotor = ($hargaSatuan * $qty);
+                if ($subtotalKotor < 0) $subtotalKotor = 0;
+
+                if ($diskonNominal > $subtotalKotor) {
+                    $diskonNominal = $subtotalKotor;
+                }
+                if ($diskonNominal < 0) {
+                    $diskonNominal = 0;
+                }
+
+                $subtotalBaris = $subtotalKotor - $diskonNominal;
                 if ($subtotalBaris < 0) $subtotalBaris = 0;
 
                 $grandTotal += $subtotalBaris;
@@ -83,6 +95,9 @@ class ProductOfferController extends Controller
                     'area_dinding'       => $ukuran,
                     'warna'              => $kodeWarna,
                     'keterangan'         => $keterangan,
+                    'diskon_tipe'        => 'nominal',
+                    'diskon_nilai'       => $diskonNominal,
+                    'diskon'             => $diskonNominal,
                 ]);
             }
 
@@ -118,6 +133,7 @@ class ProductOfferController extends Controller
             'items.*.nama_produk'   => 'required|string|max:255',
             'items.*.qty'           => 'required|numeric|min:1',
             'items.*.harga_satuan'  => 'required|numeric|min:0',
+            'items.*.diskon'        => 'nullable|numeric|min:0',
             'diskon_global'         => 'nullable|numeric|min:0',
         ]);
 
@@ -146,13 +162,24 @@ class ProductOfferController extends Controller
             // 4. Loop Simpan Item Baru
             foreach ($request->items as $itemData) {
                 $namaProduk  = $itemData['nama_produk'];
-                $hargaSatuan = $itemData['harga_satuan'];
-                $qty         = $itemData['qty'];
+                $hargaSatuan = (float)$itemData['harga_satuan'];
+                $qty         = (float)$itemData['qty'];
                 $kodeWarna   = $itemData['kode_warna'] ?? '-';
                 $keterangan  = $itemData['keterangan'] ?? '-';
                 $ukuran      = $itemData['ukuran'] ?? '-';
+                $diskonNominal = (float)($itemData['diskon'] ?? ($itemData['diskon_nilai'] ?? 0));
 
-                $subtotalBaris = ($hargaSatuan * $qty);
+                $subtotalKotor = ($hargaSatuan * $qty);
+                if ($subtotalKotor < 0) $subtotalKotor = 0;
+
+                if ($diskonNominal > $subtotalKotor) {
+                    $diskonNominal = $subtotalKotor;
+                }
+                if ($diskonNominal < 0) {
+                    $diskonNominal = 0;
+                }
+
+                $subtotalBaris = $subtotalKotor - $diskonNominal;
                 if ($subtotalBaris < 0) $subtotalBaris = 0;
 
                 $grandTotal += $subtotalBaris;
@@ -165,6 +192,9 @@ class ProductOfferController extends Controller
                     'area_dinding'       => $ukuran,
                     'warna'              => $kodeWarna,
                     'keterangan'         => $keterangan,
+                    'diskon_tipe'        => 'nominal',
+                    'diskon_nilai'       => $diskonNominal,
+                    'diskon'             => $diskonNominal,
                 ]);
             }
 

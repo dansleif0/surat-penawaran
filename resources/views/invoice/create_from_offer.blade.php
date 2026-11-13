@@ -44,14 +44,24 @@
                     <label class="block text-sm font-medium text-gray-600">Rincian Area/Pekerjaan (dari Penawaran)</label>
                     <div class="border rounded-md mt-1 divide-y divide-gray-200 bg-gray-50">
                         @foreach($offer->items as $index => $item)
+                        @php
+                            $subtotalKotor = $item->volume * $item->harga_per_m2;
+                            $discNominal = (float)($item->diskon ?? 0);
+                            $subtotalBaris = max(0, $subtotalKotor - $discNominal);
+                        @endphp
                         <div class="p-3 flex justify-between items-center text-sm">
                             <span class="text-gray-700">
                                 @if($offer->opsi_paket)
                                 <span class="font-bold text-blue-600">Paket {{ chr(65 + $index) }}</span> - 
                                 @endif
                                 {{ $item->area_dinding }} ({{ $item->nama_produk }})
+                                @if($discNominal > 0)
+                                    <span class="text-xs text-red-500 font-medium">
+                                        (Diskon: -Rp {{ number_format($discNominal, 0, ',', '.') }})
+                                    </span>
+                                @endif
                             </span>
-                            <span class="font-medium">Rp {{ number_format($item->volume * $item->harga_per_m2, 0, ',', '.') }}</span>
+                            <span class="font-medium">Rp {{ number_format($subtotalBaris, 0, ',', '.') }}</span>
                         </div>
                         @endforeach
                         @foreach($offer->jasaItems as $jasa)

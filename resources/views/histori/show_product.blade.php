@@ -87,28 +87,40 @@
         </section>
 
         <section class="mt-4">
+            @php
+                $hasItemDiscount = $offer->items->contains(function($i) {
+                    return ($i->diskon ?? 0) > 0 || ($i->diskon_nilai ?? 0) > 0;
+                });
+            @endphp
             <table class="w-full text-left border-collapse border border-gray-800 text-xs">
                 <thead class="bg-gray-800 text-white print-bg-black">
                     <tr>
-                        <th class="py-1 px-1 border border-gray-600 text-center w-[5%]">No</th>
-                        <th class="py-1 px-1 border border-gray-600 w-[26%]">Nama Produk</th>
-                        <th class="py-1 px-1 border border-gray-600 w-[15%]">Warna</th>
-                        <th class="py-1 px-1 border border-gray-600 w-[15%]">Keterangan</th>
-                        <th class="py-1 px-1 border border-gray-600 w-[10%] text-center">Ukuran</th>
-                        <th class="py-1 px-1 border border-gray-600 w-[12%] text-right">Harga Satuan</th>
+                        <th class="py-1 px-1 border border-gray-600 text-center {{ $hasItemDiscount ? 'w-[4%]' : 'w-[5%]' }}">No</th>
+                        <th class="py-1 px-1 border border-gray-600 {{ $hasItemDiscount ? 'w-[24%]' : 'w-[26%]' }}">Nama Produk</th>
+                        <th class="py-1 px-1 border border-gray-600 {{ $hasItemDiscount ? 'w-[13%]' : 'w-[15%]' }}">Warna</th>
+                        <th class="py-1 px-1 border border-gray-600 {{ $hasItemDiscount ? 'w-[13%]' : 'w-[15%]' }}">Keterangan</th>
+                        <th class="py-1 px-1 border border-gray-600 {{ $hasItemDiscount ? 'w-[8%]' : 'w-[10%]' }} text-center">Ukuran</th>
+                        <th class="py-1 px-1 border border-gray-600 {{ $hasItemDiscount ? 'w-[11%]' : 'w-[12%]' }} text-right">Harga Satuan</th>
                         <th class="py-1 px-1 border border-gray-600 w-[5%] text-center">Qty</th>
+                        @if($hasItemDiscount)
+                            <th class="py-1 px-1 border border-gray-600 w-[10%] text-center">Diskon</th>
+                        @endif
                         <th class="py-1 px-1 border border-gray-600 w-[12%] text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php $subtotalSemua = 0; @endphp
+                    @php 
+                        $subtotalSemua = 0; 
+                        $totalKotorSemua = 0;
+                        $totalDiskonItemSemua = 0;
+                    @endphp
 
                     @foreach($offer->items as $index => $item)
                         @php
                             $harga = $item->harga_per_m2;
                             $qty = $item->volume;
-                            $totalBaris = $harga * $qty;
-                            $diskonNominal = 0;
+                            $subtotalBarisKotor = $harga * $qty;
+                            $diskonNominal = (float)($item->diskon ?? 0);
                             
                             $warnaBaris = $item->warna ?? '';
                             $keteranganBaris = $item->keterangan ?? '';
@@ -118,7 +130,6 @@
                                 $keterangan = $item->deskripsi_tambahan;
                                 if (preg_match('/Potongan: Rp ([0-9,.]+)/', $keterangan, $matches)) {
                                     $diskonNominal = (int) str_replace(['.', ','], '', $matches[1]);
-                                    $totalBaris -= $diskonNominal;
                                     $keterangan = preg_replace('/ \| Potongan: Rp [0-9,.]+/', '', $keterangan);
                                     $keterangan = preg_replace('/Potongan: Rp [0-9,.]+/', '', $keterangan);
                                 }
@@ -129,6 +140,9 @@
                                 }
                             }
 
+                            $totalBaris = max(0, $subtotalBarisKotor - $diskonNominal);
+                            $totalKotorSemua += $subtotalBarisKotor;
+                            $totalDiskonItemSemua += $diskonNominal;
                             $subtotalSemua += $totalBaris;
                         @endphp
                         <tr class="border-b border-gray-300">
@@ -151,6 +165,15 @@
                             <td class="py-0.5 px-1 border-x border-gray-300 text-center align-middle">
                                 {{ $qty }}
                             </td>
+                            @if($hasItemDiscount)
+                                <td class="py-0.5 px-1 border-x border-gray-300 text-center align-middle whitespace-nowrap">
+                                    @if($diskonNominal > 0)
+                                        <span class="font-semibold text-red-600">Rp {{ number_format($diskonNominal, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
+                            @endif
                             <td class="py-0.5 px-1 border-x border-gray-300 text-right whitespace-nowrap align-middle">
                                 Rp {{ number_format($totalBaris, 0, ',', '.') }}
                             </td>
@@ -159,16 +182,34 @@
                 </tbody>
 
                 @if(!$hideGrandTotal)
+                    @php $colspan = $hasItemDiscount ? 8 : 7; @endphp
                     <tfoot>
-                        @if($offer->diskon_global > 0)
+                        @if($totalDiskonItemSemua > 0)
                             <tr class="bg-gray-50 print:bg-white">
-                                <td colspan="7" class="py-1 px-1 border border-gray-300 text-right text-gray-600 text-xs">Subtotal</td>
+                                <td colspan="{{ $colspan }}" class="py-1 px-1 border border-gray-300 text-right text-gray-600 text-xs">Total Harga Produk</td>
                                 <td class="py-1 px-1 border border-gray-300 text-right whitespace-nowrap text-xs">
-                                    Rp {{ number_format($subtotalSemua, 0, ',', '.') }}
+                                    Rp {{ number_format($totalKotorSemua, 0, ',', '.') }}
                                 </td>
                             </tr>
                             <tr class="bg-gray-50 print:bg-white text-red-600">
-                                <td colspan="7" class="py-1 px-1 border border-gray-300 text-right text-xs">Diskon Tambahan (Global)</td>
+                                <td colspan="{{ $colspan }}" class="py-1 px-1 border border-gray-300 text-right text-xs">Total Diskon Item</td>
+                                <td class="py-1 px-1 border border-gray-300 text-right whitespace-nowrap text-xs">
+                                    - Rp {{ number_format($totalDiskonItemSemua, 0, ',', '.') }}
+                                </td>
+                            </tr>
+                        @endif
+
+                        @if($offer->diskon_global > 0)
+                            @if($totalDiskonItemSemua == 0)
+                                <tr class="bg-gray-50 print:bg-white">
+                                    <td colspan="{{ $colspan }}" class="py-1 px-1 border border-gray-300 text-right text-gray-600 text-xs">Subtotal</td>
+                                    <td class="py-1 px-1 border border-gray-300 text-right whitespace-nowrap text-xs">
+                                        Rp {{ number_format($subtotalSemua, 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endif
+                            <tr class="bg-gray-50 print:bg-white text-red-600">
+                                <td colspan="{{ $colspan }}" class="py-1 px-1 border border-gray-300 text-right text-xs">Diskon Tambahan (Global)</td>
                                 <td class="py-1 px-1 border border-gray-300 text-right whitespace-nowrap text-xs">
                                     - Rp {{ number_format($offer->diskon_global, 0, ',', '.') }}
                                 </td>
@@ -176,7 +217,7 @@
                         @endif
 
                         <tr class="bg-gray-100 print:bg-gray-200">
-                            <td colspan="7" class="py-2 px-1 border border-gray-300 text-right font-bold uppercase text-gray-900 text-sm">Grand Total</td>
+                            <td colspan="{{ $colspan }}" class="py-2 px-1 border border-gray-300 text-right font-bold uppercase text-gray-900 text-sm">Grand Total</td>
                             <td class="py-2 px-1 border border-gray-300 text-right font-bold text-sm text-gray-900 whitespace-nowrap">
                                 Rp {{ number_format($offer->total_keseluruhan, 0, ',', '.') }}
                             </td>

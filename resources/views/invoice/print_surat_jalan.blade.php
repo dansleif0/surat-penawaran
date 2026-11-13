@@ -304,12 +304,12 @@
                         <thead>
                             <tr class="border-t-2 border-b-2 border-black uppercase text-left font-bold text-[11px]">
                                 <th class="py-1 px-1 w-[4%] text-center">NO</th>
-                                <th class="py-1 px-1 w-[38%]">NAMA BARANG</th>
+                                <th class="py-1 px-1 w-[37%]">NAMA BARANG</th>
                                 <th class="py-1 px-1 w-[12%] text-center">JUMLAH</th>
                                 <th class="py-1 px-1 w-[6%] text-center">BONUS</th>
                                 <th class="py-1 px-1 w-[11%] text-right">@HARGA</th>
                                 <th class="py-1 px-1 w-[11%] text-right">HARGA</th>
-                                <th class="py-1 px-1 w-[7%] text-center">DISCOUNT</th>
+                                <th class="py-1 px-1 w-[8%] text-right">DISCOUNT</th>
                                 <th class="py-1 px-1 w-[11%] text-right">TOTAL</th>
                             </tr>
                         </thead>
@@ -322,8 +322,8 @@
                                         $hargaSatuan = $item->harga_per_m2;
                                         $qty = $item->volume;
                                         $subHarga = $hargaSatuan * $qty;
-                                        $discVal = 0;
-                                        $totalBaris = $subHarga - $discVal;
+                                        $discVal = (float)($item->diskon ?? 0);
+                                        $totalBaris = max(0, $subHarga - $discVal);
                                         $strUkuran = str_replace(',', '.', $item->area_dinding);
                                         $ukuranVal = (float) filter_var($strUkuran, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
                                         $satuanCetak = $ukuranVal > 5 ? 'PAIL' : 'CAN';
@@ -348,7 +348,9 @@
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap">
                                             {{ number_format($subHarga, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-0.5 px-1 text-center">- &nbsp;0.00%</td>
+                                        <td class="py-0.5 px-1 text-right whitespace-nowrap">
+                                            {{ $discVal > 0 ? number_format($discVal, 0, ',', '.') : '-' }}
+                                        </td>
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap font-semibold">
                                             {{ number_format($totalBaris, 0, ',', '.') }}
                                         </td>
@@ -371,7 +373,7 @@
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap">
                                             {{ number_format($jasa->harga_jasa, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-0.5 px-1 text-center">- &nbsp;0.00%</td>
+                                        <td class="py-0.5 px-1 text-right whitespace-nowrap">-</td>
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap font-semibold">
                                             {{ number_format($jasa->harga_jasa, 0, ',', '.') }}
                                         </td>
@@ -389,7 +391,7 @@
                                         <td class="py-0.5 px-1 text-center"></td>
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap">{{ number_format($mItem->debit, 0, ',', '.') }}</td>
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap">{{ number_format($mItem->debit, 0, ',', '.') }}</td>
-                                        <td class="py-0.5 px-1 text-center">- &nbsp;0.00%</td>
+                                        <td class="py-0.5 px-1 text-right whitespace-nowrap">-</td>
                                         <td class="py-0.5 px-1 text-right whitespace-nowrap font-semibold">{{ number_format($mItem->debit, 0, ',', '.') }}</td>
                                     </tr>
                                 @endforeach

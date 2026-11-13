@@ -94,6 +94,11 @@
                         <span id="display-subtotal">Rp 0</span>
                     </div>
 
+                    <div id="row-total-diskon-item" class="flex justify-between items-center text-red-600 hidden">
+                        <span class="text-sm font-semibold">Total Diskon Item:</span>
+                        <span id="display-total-diskon-item" class="font-semibold text-sm">- Rp 0</span>
+                    </div>
+
                     <div class="flex justify-between items-center text-red-600">
                         <span class="text-sm font-semibold">Diskon Tambahan (Global):</span>
                         <div class="flex items-center gap-1 w-1/2 justify-end">
@@ -123,7 +128,7 @@
 </div>
 
 <template id="row-template">
-    <div class="item-row bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm relative grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4">
+    <div class="item-row bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm relative grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end mb-4">
 
         <div class="md:col-span-3">
             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Nama Produk <span class="text-red-500">*</span></label>
@@ -157,6 +162,11 @@
         <div class="md:col-span-1">
             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">QTY <span class="text-red-500">*</span></label>
             <input type="number" class="qty-input w-full rounded-md border-gray-300 text-sm text-center font-bold" value="1" min="1">
+        </div>
+
+        <div class="md:col-span-1">
+            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Diskon (Rp)</label>
+            <input type="number" class="diskon-input w-full rounded-md border-gray-300 text-sm text-right font-medium" placeholder="0" min="0">
         </div>
 
         <div class="md:col-span-2">
@@ -210,6 +220,7 @@
             newRow.querySelector('.ukuran-input').name = `items[${rowIndex}][ukuran]`;
             newRow.querySelector('.harga-input').name = `items[${rowIndex}][harga_satuan]`;
             newRow.querySelector('.qty-input').name = `items[${rowIndex}][qty]`;
+            newRow.querySelector('.diskon-input').name = `items[${rowIndex}][diskon]`;
 
             if (targetRow && targetRow instanceof Element) {
                 targetRow.after(newRow);
@@ -222,7 +233,7 @@
         }
 
         function initRowEvents(row) {
-            const inputs = row.querySelectorAll('input');
+            const inputs = row.querySelectorAll('input, select');
             const removeBtn = row.querySelector('.remove-btn');
             const insertBtn = row.querySelector('.insert-btn');
             const nameInput = row.querySelector('.nama-produk-input');
@@ -249,6 +260,7 @@
 
             inputs.forEach(input => {
                 input.addEventListener('input', calculateAll);
+                input.addEventListener('change', calculateAll);
             });
 
             if (insertBtn) {
@@ -265,27 +277,54 @@
 
         function calculateAll() {
             let totalQty = 0;
-            let totalHargaProduk = 0;
+            let totalKotor = 0;
+            let totalDiskonItem = 0;
 
             document.querySelectorAll('.item-row').forEach(row => {
                 const harga = parseFloat(row.querySelector('.harga-input').value) || 0;
                 const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const diskon = parseFloat(row.querySelector('.diskon-input').value) || 0;
 
-                let subtotalBaris = (harga * qty);
+                const subtotalKotor = harga * qty;
+                let nominalDiskon = diskon;
+
+                if (nominalDiskon > subtotalKotor) {
+                    nominalDiskon = subtotalKotor;
+                }
+                if (nominalDiskon < 0) {
+                    nominalDiskon = 0;
+                }
+
+                let subtotalBaris = subtotalKotor - nominalDiskon;
                 if(subtotalBaris < 0) subtotalBaris = 0;
 
                 row.querySelector('.subtotal-input').value = formatRupiah(subtotalBaris);
 
                 totalQty += qty;
-                totalHargaProduk += subtotalBaris;
+                totalKotor += subtotalKotor;
+                totalDiskonItem += nominalDiskon;
             });
 
+            const totalSetelahDiskonItem = totalKotor - totalDiskonItem;
             const diskonGlobal = parseFloat(globalDiscountInput.value) || 0;
-            let grandTotal = totalHargaProduk - diskonGlobal;
+            let grandTotal = totalSetelahDiskonItem - diskonGlobal;
             if(grandTotal < 0) grandTotal = 0;
 
             displayTotalQty.textContent = totalQty;
-            displaySubtotal.textContent = formatRupiah(totalHargaProduk);
+            displaySubtotal.textContent = formatRupiah(totalKotor);
+
+            const rowTotalDiskonItem = document.getElementById('row-total-diskon-item');
+            const displayTotalDiskonItem = document.getElementById('display-total-diskon-item');
+            if (rowTotalDiskonItem && displayTotalDiskonItem) {
+                if (totalDiskonItem > 0) {
+                    rowTotalDiskonItem.classList.remove('hidden');
+                    displayTotalDiskonItem.textContent = '- ' + formatRupiah(totalDiskonItem);
+                } else {
+                    rowTotalDiskonItem.classList.add('hidden');
+                    displayTotalDiskonItem.textContent = '- Rp 0';
+                }
+            }
+
             displayGrandTotal.textContent = formatRupiah(grandTotal);
         }
 
@@ -297,6 +336,7 @@
                 const ukur = row.querySelector('.ukuran-input');
                 const harga = row.querySelector('.harga-input');
                 const qty = row.querySelector('.qty-input');
+                const diskon = row.querySelector('.diskon-input');
 
                 if (nama) nama.name = `items[${index}][nama_produk]`;
                 if (warna) warna.name = `items[${index}][kode_warna]`;
@@ -304,6 +344,7 @@
                 if (ukur) ukur.name = `items[${index}][ukuran]`;
                 if (harga) harga.name = `items[${index}][harga_satuan]`;
                 if (qty) qty.name = `items[${index}][qty]`;
+                if (diskon) diskon.name = `items[${index}][diskon]`;
             });
         }
 
@@ -457,6 +498,18 @@
                             scrollTarget: row,
                             message: `QTY baris #${index + 1} minimal 1.`
                         });
+                    }
+
+                    const diskonInput = row.querySelector('.diskon-input');
+                    if (diskonInput && diskonInput.value !== '') {
+                        const val = parseFloat(diskonInput.value);
+                        if (isNaN(val) || val < 0) {
+                            errors.push({
+                                element: diskonInput,
+                                scrollTarget: row,
+                                message: `Diskon baris #${index + 1} tidak boleh bernilai negatif.`
+                            });
+                        }
                     }
                 });
             }
