@@ -13,9 +13,27 @@
                 🖨️ Print
             </button>
             {{-- Tombol Download PDF sudah dihapus --}}
-            <a href="{{ route('invoice.create_from_offer', $offer->id) }}" class="bg-gray-800 text-white font-bold py-2 px-4 rounded hover:bg-gray-700 transition-colors">
-                Buat Invoice &rarr;
-            </a>
+            @php
+                $hasInvoice = ($offer->invoices && $offer->invoices->isNotEmpty()) || ($offer->invoices_exists ?? false);
+                $invList = $offer->invoices && $offer->invoices->isNotEmpty() ? $offer->invoices->pluck('no_invoice')->implode(', ') : 'Invoice Sudah Dibuat';
+                $noSuratDisplay = 'SP-' . $offer->created_at->format('Y') . '/' . str_pad($offer->id, 4, '0', STR_PAD_LEFT);
+            @endphp
+            @if($hasInvoice)
+                <a href="javascript:void(0)"
+                   onclick="window.showInvoiceWarningModal({
+                       url: '{{ route('invoice.create_from_offer', ['offer' => $offer->id, 'confirmed' => 1]) }}',
+                       noSurat: '{{ $noSuratDisplay }}',
+                       namaKlien: '{{ addslashes($offer->nama_klien) }}',
+                       existingInvoices: '{{ addslashes($invList) }}'
+                   })"
+                   class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Buat Invoice &rarr;
+                </a>
+            @else
+                <a href="{{ route('invoice.create_from_offer', $offer->id) }}" class="bg-gray-800 text-white font-bold py-2 px-4 rounded hover:bg-gray-700 transition-colors">
+                    Buat Invoice &rarr;
+                </a>
+            @endif
         </div>
     </div>
 

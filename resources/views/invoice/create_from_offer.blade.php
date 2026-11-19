@@ -5,6 +5,37 @@
     <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 class="text-2xl font-bold mb-6 text-center">Buat Invoice dari Penawaran</h1>
 
+        @php
+            $bulanRomawi = [1=>'I', 2=>'II', 3=>'III', 4=>'IV', 5=>'V', 6=>'VI', 7=>'VII', 8=>'VIII', 9=>'IX', 10=>'X', 11=>'XI', 12=>'XII'];
+            $romawi = $bulanRomawi[$offer->created_at->format('n')] ?? 'I';
+            $tahun = $offer->created_at->format('Y');
+            $noSuratLengkap = "00{$offer->id}/SP/TGI-1/{$romawi}/{$tahun}";
+            $hasInvoice = $offer->invoices && $offer->invoices->isNotEmpty();
+            $invList = $hasInvoice ? $offer->invoices->pluck('no_invoice')->implode(', ') : '';
+        @endphp
+
+        {{-- Banner Peringatan jika surat penawaran sudah pernah diubah menjadi invoice --}}
+        @if($hasInvoice)
+            <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-xs">
+                <div class="flex items-start gap-3">
+                    <div class="text-amber-500 mt-0.5 flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 text-xs text-amber-800">
+                        <div class="font-bold text-amber-900 text-sm">Peringatan: Surat Penawaran Ini Sudah Pernah Diubah Menjadi Invoice</div>
+                        <p class="mt-1 text-amber-700">
+                            Invoice terkait sebelumnya: <strong class="font-mono text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded">{{ $invList }}</strong>.
+                        </p>
+                        <p class="mt-0.5 text-amber-700">
+                            Anda saat ini sedang membuat invoice tambahan / baru untuk penawaran ini.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Nanti kita arahkan ke route 'invoice.store' -->
         <form id="invoice-form" action="{{ route('invoice.store_from_offer') }}" method="POST">
             @csrf
@@ -258,6 +289,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Inisialisasi kalkulasi saat halaman dimuat
     calculateAllTotals();
+
+    // Peringatan otomatis jika penawaran sudah pernah diubah menjadi invoice
+    @if($hasInvoice && !request('confirmed'))
+        if (typeof window.showInvoiceWarningModal === 'function') {
+            window.showInvoiceWarningModal({
+                url: null, // Cukup tutup modal agar pengguna bisa melanjutkan form
+                cancelUrl: '{{ route('histori.index') }}', // Kembalikan ke halaman histori jika dibatalkan
+                noSurat: '{{ $noSuratLengkap }}',
+                namaKlien: '{{ addslashes($offer->nama_klien) }}',
+                existingInvoices: '{{ addslashes($invList) }}'
+            });
+        }
+    @endif
 
     // Logika anti double-submit
     const invoiceForm = document.getElementById('invoice-form');

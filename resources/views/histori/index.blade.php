@@ -114,7 +114,25 @@
                                     <div class="py-1" role="menu">
                                         <a href="{{ route('histori.show', ['offer' => $offer->id]) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100">👁️ Lihat / Print</a>
                                         <div class="border-t border-gray-100 my-1"></div>
-                                        <a href="{{ route('invoice.create_from_offer', ['offer' => $offer->id]) }}" class="text-green-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">💰 Buat Invoice</a>
+                                        @php
+                                            $hasInvoice = ($offer->invoices && $offer->invoices->isNotEmpty()) || $offer->invoices_exists;
+                                            $invList = $offer->invoices && $offer->invoices->isNotEmpty() ? $offer->invoices->pluck('no_invoice')->implode(', ') : 'Invoice Sudah Dibuat';
+                                            $noSuratDisplay = 'SP-' . $offer->created_at->format('Y') . '/' . str_pad($offer->id, 4, '0', STR_PAD_LEFT);
+                                        @endphp
+                                        @if($hasInvoice)
+                                            <a href="javascript:void(0)"
+                                               onclick="window.showInvoiceWarningModal({
+                                                   url: '{{ route('invoice.create_from_offer', ['offer' => $offer->id, 'confirmed' => 1]) }}',
+                                                   noSurat: '{{ $noSuratDisplay }}',
+                                                   namaKlien: '{{ addslashes($offer->nama_klien) }}',
+                                                   existingInvoices: '{{ addslashes($invList) }}'
+                                               })"
+                                               class="text-amber-700 block px-4 py-2 text-sm hover:bg-amber-50 font-medium">
+                                               💰 Buat Invoice
+                                            </a>
+                                        @else
+                                            <a href="{{ route('invoice.create_from_offer', ['offer' => $offer->id]) }}" class="text-green-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">💰 Buat Invoice</a>
+                                        @endif
                                         @if($offer->jenis_penawaran != 'produk')
                                              {{-- Sementara disembunyikan: Buat SPK --}}
                                             {{-- <a href="{{ route('skp.create', ['offer' => $offer->id]) }}" class="text-indigo-700 block px-4 py-2 text-sm hover:bg-gray-100 font-medium">📝 Buat SPK</a> --}}

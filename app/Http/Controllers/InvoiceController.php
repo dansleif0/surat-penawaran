@@ -98,7 +98,7 @@ class InvoiceController extends Controller
      */
     public function createFromOffer(Offer $offer)
     {
-        $offer->load(['items', 'jasaItems']);
+        $offer->load(['items', 'jasaItems', 'invoices:id,offer_id,no_invoice']);
         return view('invoice.create_from_offer', [
             'offer' => $offer
         ]);

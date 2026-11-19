@@ -46,7 +46,7 @@ class OfferController extends Controller
             }
         }
 
-        $offers = $query->with(['items', 'jasaItems'])->withExists('invoices')->latest()->paginate(15);
+        $offers = $query->with(['items', 'jasaItems', 'invoices:id,offer_id,no_invoice'])->withExists('invoices')->latest()->paginate(15);
         return view('histori.index', compact('offers', 'search', 'jenis', 'status'));
     }
 
@@ -232,7 +232,7 @@ class OfferController extends Controller
     // ... method lainnya (show, edit, destroy, print) tetap sama ...
     public function show($id)
     {
-        $offer = Offer::with(['items', 'jasaItems'])->withExists('invoices')->findOrFail($id);
+        $offer = Offer::with(['items', 'jasaItems', 'invoices:id,offer_id,no_invoice'])->withExists('invoices')->findOrFail($id);
         $view = ($offer->jenis_penawaran == 'produk') ? 'histori.show_product' : 'histori.show';
         return view($view, compact('offer'));
     }
