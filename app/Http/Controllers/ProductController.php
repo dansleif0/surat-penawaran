@@ -45,7 +45,24 @@ class ProductController extends Controller
             $query->where('hasil_akhir', $request->hasil_akhir);
         }
 
-        $products = $query->latest()->get();
+        $rawProducts = $query->orderBy('nama_produk', 'asc')->get();
+
+        // Kelompokkan produk berdasarkan nama_produk agar di halaman index tetap tampil 1 baris per produk
+        $products = $rawProducts->groupBy(function ($item) {
+            return strtolower(trim($item->nama_produk));
+        })->map(function ($variants) {
+            $first = $variants->first();
+            return (object) [
+                'id'          => $first->id,
+                'nama_produk' => $first->nama_produk,
+                'performa'    => $first->performa,
+                'kriteria'    => $first->kriteria,
+                'hasil_akhir' => $first->hasil_akhir,
+                'harga'       => $first->harga,
+                'stok'        => $variants->sum('stok'),
+                'variants'    => $variants,
+            ];
+        })->values();
 
         // Opsi unik dari DB untuk Dropdown Filter
         $kriteriaOptions = Product::whereNotNull('kriteria')
@@ -86,23 +103,51 @@ class ProductController extends Controller
     // Menyimpan data harga baru (Create Action)
     public function store(Request $request)
     {
-        // 1. Validasi Input (Sesuai dengan form di harga/create.blade.php)
+        // 1. Validasi Input
         $request->validate([
-            'nama_produk' => 'required|string|max:255',
-            'performa'    => 'required|string|max:255', // Ini adalah input "Nama Brand"
-            'kriteria'    => 'required|string|in:Exterior,Interior',
-            'hasil_akhir' => 'required|string|max:255',
-            'harga'       => 'required|integer|min:0',
+            'nama_produk'       => 'required|string|max:255',
+            'performa'          => 'required|string|max:255', // Ini adalah input "Nama Brand"
+            'kriteria'          => 'required|string|in:Exterior,Interior',
+            'hasil_akhir'       => 'required|string|max:255',
+            'harga'             => 'required|integer|min:0',
+            'stok'              => 'nullable|integer|min:0',
+            'variants'          => 'nullable|array',
+            'variants.*.ukuran' => 'nullable|string|max:100',
+            'variants.*.stok'   => 'nullable|integer|min:0',
+            'variants.*.harga'  => 'nullable|integer|min:0',
         ]);
 
-        // 2. Simpan ke Database
-        Product::create([
-            'nama_produk' => $request->nama_produk,
-            'performa'    => $request->performa, // Menyimpan Brand
-            'kriteria'    => $request->kriteria,
-            'hasil_akhir' => $request->hasil_akhir,
-            'harga'       => $request->harga,
-        ]);
+        DB::transaction(function () use ($request) {
+            $variantsInput = $request->input('variants', []);
+            $validVariants = array_filter($variantsInput, function ($v) {
+                return !empty(trim($v['ukuran'] ?? ''));
+            });
+
+            if (!empty($validVariants)) {
+                foreach ($validVariants as $v) {
+                    Product::create([
+                        'nama_produk' => trim($request->nama_produk),
+                        'performa'    => trim($request->performa),
+                        'kriteria'    => $request->kriteria,
+                        'hasil_akhir' => $request->hasil_akhir,
+                        'ukuran'      => trim($v['ukuran']),
+                        'stok'        => isset($v['stok']) && $v['stok'] !== '' ? (int)$v['stok'] : 0,
+                        'harga'       => !empty($v['harga']) ? (int)$v['harga'] : (int)$request->harga,
+                    ]);
+                }
+            } else {
+                // Produk tanpa ukuran kemasan khusus
+                Product::create([
+                    'nama_produk' => trim($request->nama_produk),
+                    'performa'    => trim($request->performa),
+                    'kriteria'    => $request->kriteria,
+                    'hasil_akhir' => $request->hasil_akhir,
+                    'ukuran'      => null,
+                    'stok'        => $request->stok ?? 0,
+                    'harga'       => (int)$request->harga,
+                ]);
+            }
+        });
 
         // 3. Redirect kembali ke index dengan pesan sukses
         return redirect()->route('harga.index')->with('success', 'Data harga berhasil ditambahkan!');
@@ -111,27 +156,89 @@ class ProductController extends Controller
     // Form edit harga (Edit View)
     public function edit(Product $product)
     {
-        return view('harga.edit', ['product' => $product]);
+        $variants = Product::where('nama_produk', $product->nama_produk)
+            ->orWhereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower(trim($product->nama_produk))])
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return view('harga.edit', compact('product', 'variants'));
     }
 
     // Update data harga (Update Action)
     public function update(Request $request, Product $product)
     {
         $request->validate([
-            'nama_produk' => 'required|string|max:255',
-            'performa'    => 'required|string|max:255',
-            'kriteria'    => 'required|string|in:Exterior,Interior',
-            'hasil_akhir' => 'required|string|max:255',
-            'harga'       => 'required|integer|min:0',
+            'nama_produk'       => 'required|string|max:255',
+            'performa'          => 'required|string|max:255',
+            'kriteria'          => 'required|string|in:Exterior,Interior',
+            'hasil_akhir'       => 'required|string|max:255',
+            'harga'             => 'required|integer|min:0',
+            'stok'              => 'nullable|integer|min:0',
+            'variants'          => 'nullable|array',
+            'variants.*.ukuran' => 'nullable|string|max:100',
+            'variants.*.stok'   => 'nullable|integer|min:0',
+            'variants.*.harga'  => 'nullable|integer|min:0',
         ]);
 
-        $product->update([
-            'nama_produk' => $request->nama_produk,
-            'performa'    => $request->performa,
-            'kriteria'    => $request->kriteria,
-            'hasil_akhir' => $request->hasil_akhir,
-            'harga'       => $request->harga,
-        ]);
+        DB::transaction(function () use ($request, $product) {
+            $oldName = $product->nama_produk;
+            $newName = trim($request->nama_produk);
+
+            // Ambil semua variant lama dari produk ini
+            $existingVariants = Product::where('nama_produk', $oldName)
+                ->orWhereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower(trim($oldName))])
+                ->get();
+
+            // Peta stok lama per ukuran agar stok tetap terjaga saat ukuran/harga disunting
+            $existingStockMap = $existingVariants->keyBy(function ($item) {
+                return strtolower(trim($item->ukuran ?? ''));
+            });
+
+            // Hapus variant lama
+            Product::whereIn('id', $existingVariants->pluck('id'))->delete();
+
+            // Buat variant baru sesuai input form
+            $variantsInput = $request->input('variants', []);
+            $validVariants = array_filter($variantsInput, function ($v) {
+                return !empty(trim($v['ukuran'] ?? ''));
+            });
+
+            if (!empty($validVariants)) {
+                foreach ($validVariants as $v) {
+                    $uTrim = trim($v['ukuran']);
+                    $uKey = strtolower($uTrim);
+
+                    // Pertahankan stok lama jika ukuran ini sudah ada sebelumnya di database
+                    $stok = 0;
+                    if (isset($v['stok']) && $v['stok'] !== '') {
+                        $stok = (int)$v['stok'];
+                    } elseif ($existingStockMap->has($uKey)) {
+                        $stok = (int)$existingStockMap->get($uKey)->stok;
+                    }
+
+                    Product::create([
+                        'nama_produk' => $newName,
+                        'performa'    => trim($request->performa),
+                        'kriteria'    => $request->kriteria,
+                        'hasil_akhir' => $request->hasil_akhir,
+                        'ukuran'      => $uTrim,
+                        'stok'        => $stok,
+                        'harga'       => !empty($v['harga']) ? (int)$v['harga'] : (int)$request->harga,
+                    ]);
+                }
+            } else {
+                $stok = isset($request->stok) && $request->stok !== '' ? (int)$request->stok : ($existingVariants->first()->stok ?? 0);
+                Product::create([
+                    'nama_produk' => $newName,
+                    'performa'    => trim($request->performa),
+                    'kriteria'    => $request->kriteria,
+                    'hasil_akhir' => $request->hasil_akhir,
+                    'ukuran'      => null,
+                    'stok'        => $stok,
+                    'harga'       => (int)$request->harga,
+                ]);
+            }
+        });
 
         return redirect()->route('harga.index')->with('success', 'Data harga berhasil diperbarui!');
     }
@@ -139,8 +246,13 @@ class ProductController extends Controller
     // Menghapus data harga (Delete Action)
     public function destroy(Product $product)
     {
-        $product->delete();
-        return redirect()->route('harga.index')->with('success', 'Data berhasil dihapus!');
+        DB::transaction(function () use ($product) {
+            Product::where('nama_produk', $product->nama_produk)
+                ->orWhereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower(trim($product->nama_produk))])
+                ->delete();
+        });
+
+        return redirect()->route('harga.index')->with('success', 'Data produk beserta seluruh varian ukurannya berhasil dihapus!');
     }
 
     // =========================================================================

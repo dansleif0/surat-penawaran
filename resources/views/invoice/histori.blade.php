@@ -201,6 +201,20 @@
                     @php
                         $isPersiapan = $invoice->is_persiapan && !$invoice->persiapan_confirmed_at;
                         $rowClass = $isPersiapan ? 'bg-orange-50 hover:bg-orange-100' : 'bg-white hover:bg-gray-50';
+
+                        // Cek apakah invoice berjenis produk memiliki produk di luar master data harga produk
+                        $unregisteredProducts = [];
+                        if ($invoice->jenis === 'produk' && $invoice->offer && $invoice->offer->items) {
+                            foreach ($invoice->offer->items as $item) {
+                                if (!empty($item->nama_produk) && (float)($item->volume ?? 0) > 0) {
+                                    $namaLower = strtolower(trim($item->nama_produk));
+                                    if (!in_array($namaLower, $registeredProductNames ?? [])) {
+                                        $unregisteredProducts[] = trim($item->nama_produk);
+                                    }
+                                }
+                            }
+                        }
+                        $hasUnregistered = count($unregisteredProducts) > 0;
                     @endphp
 
                     <tr class="{{ $rowClass }} transition duration-150 ease-in-out {{ $isPersiapan ? 'border-l-4 border-orange-400' : '' }}" id="invoice-row-{{ $invoice->id }}">
@@ -209,9 +223,12 @@
                         @if(Auth::check() && Auth::user()->role === 'admin')
                         <td class="px-4 py-4 text-center whitespace-nowrap">
                             <input type="checkbox" value="{{ $invoice->id }}"
+                                data-no-invoice="{{ $invoice->no_invoice }}"
                                 data-jenis="{{ $invoice->jenis }}"
                                 data-persiapan="{{ ($invoice->is_persiapan && !$invoice->persiapan_confirmed_at) ? '1' : '0' }}"
                                 data-confirmed="{{ $invoice->persiapan_confirmed_at ? '1' : '0' }}"
+                                data-has-unregistered="{{ $hasUnregistered ? '1' : '0' }}"
+                                data-unregistered-items="{{ implode(', ', $unregisteredProducts) }}"
                                 class="invoice-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
                         </td>
                         @endif
@@ -263,6 +280,13 @@
                                 <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded border border-blue-400">
                                     Produk
                                 </span>
+                                @if($hasUnregistered)
+                                    <div class="mt-1" title="Terdapat produk tidak terdaftar di Data Master Harga Produk: {{ implode(', ', $unregisteredProducts) }}. Tidak dapat dipersiapkan untuk gudang/driver.">
+                                        <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[10px] font-semibold px-2 py-0.5 rounded border border-rose-200">
+                                            ⚠️ Produk Belum Terdaftar
+                                        </span>
+                                    </div>
+                                @endif
                             @else
                                 <span class="bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-0.5 rounded border border-gray-500">
                                     Proyek
@@ -611,6 +635,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (produkChecked.length === 0) {
                 alert('Pilih minimal 1 invoice produk yang ingin dipersiapkan!');
+                return;
+            }
+
+            // Validasi: Hanya produk yang terdaftar di master data harga produk yang boleh dipersiapkan
+            const invalidUnregistered = produkChecked.filter(cb => cb.dataset.hasUnregistered === '1');
+            if (invalidUnregistered.length > 0) {
+                const listInfo = invalidUnregistered.map(cb => `• ${cb.dataset.noInvoice || ('Invoice #' + cb.value)}: Produk [${cb.dataset.unregisteredItems}]`).join('\n');
+                alert(`Tidak dapat membuat persiapan!\n\nTerdapat invoice dengan produk yang TIDAK TERDAFTAR di Master Data Harga Produk:\n\n${listInfo}\n\nInvoice hanya dapat dipersiapkan untuk Staf Gudang dan Driver jika SELURUH produknya terdaftar di Master Harga Produk. Silakan daftarkan produk terlebih dahulu di menu Master Data Produk (Daftar Harga).`);
                 return;
             }
 

@@ -21,5 +21,6 @@ class Product extends Model
         'performa',
         'harga',
         'stok',
+        'ukuran',
     ];
 }

@@ -40,8 +40,8 @@
 
                 {{-- Datalist untuk Autocomplete --}}
                 <datalist id="list-produk-db">
-                    @foreach ($products as $product)
-                        <option value="{{ $product->nama_produk }}" data-harga="{{ $product->harga }}" data-kemasan="{{ $product->kemasan ?? '-' }}">
+                    @foreach ($products->unique(fn($p) => strtolower(trim($p->nama_produk))) as $product)
+                        <option value="{{ $product->nama_produk }}" data-harga="{{ $product->harga }}">
                     @endforeach
                 </datalist>
 
@@ -125,7 +125,17 @@
         </div>
         <div class="md:col-span-1">
             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Ukuran</label>
-            <input type="text" class="ukuran-input w-full rounded-md border-gray-300 text-sm" placeholder="Size">
+            <div class="ukuran-field-wrapper">
+                <select class="ukuran-select w-full rounded-md border-gray-300 text-sm hidden py-2 px-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="">-- Ukuran --</option>
+                </select>
+                <div class="ukuran-manual-box flex items-center gap-1">
+                    <input type="text" class="ukuran-input w-full rounded-md border-gray-300 text-sm" placeholder="2.5 L">
+                    <button type="button" class="btn-switch-to-select hidden text-blue-600 hover:text-blue-800 p-1 text-xs font-bold" title="Pilih dari daftar ukuran produk">
+                        ▼
+                    </button>
+                </div>
+            </div>
         </div>
         <div class="md:col-span-2">
             <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Harga (@) <span class="text-red-500">*</span></label>
@@ -164,7 +174,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // --- DATA LAMA DARI DATABASE (Inject PHP ke JS) ---
-        // Kita parsing data item yang ada agar bisa di-looping
         const existingItems = @json($offer->items);
 
         const container = document.getElementById('items-container');
@@ -176,6 +185,29 @@
         const displayGrandTotal = document.getElementById('display-grand-total');
         const globalDiscountInput = document.getElementById('global-discount-input');
 
+        // Mapping data produk dari database (dikelompokkan per nama produk dan varian ukurannya)
+        const productsDbMap = {
+            @foreach ($products->groupBy(fn($p) => strtolower(trim($p->nama_produk))) as $key => $variants)
+                @php
+                    $first = $variants->first();
+                    $sizes = $variants->filter(fn($v) => !empty($v->ukuran))->map(function($v) {
+                        return [
+                            'ukuran' => $v->ukuran,
+                            'harga' => (int) $v->harga,
+                            'stok' => (int) $v->stok,
+                        ];
+                    })->values();
+                @endphp
+                "{{ addslashes($key) }}": {
+                    nama_produk: "{{ addslashes($first->nama_produk) }}",
+                    harga: {{ (int) $first->harga }},
+                    stok: {{ (int) $variants->sum('stok') }},
+                    variants: @json($sizes),
+                    ukuran: @json($sizes->pluck('ukuran'))
+                },
+            @endforeach
+        };
+
         let rowIndex = 0;
 
         const formatRupiah = (number) => {
@@ -185,20 +217,29 @@
         // Fungsi Tambah / Sisip Baris
         function addRow(data = null, targetRow = null) {
             const newRow = template.cloneNode(true);
+            const nameUkuran = `items[${rowIndex}][ukuran]`;
 
             // Setup Names
             newRow.querySelector('.nama-produk-input').name = `items[${rowIndex}][nama_produk]`;
             newRow.querySelector('.kode-warna-input').name = `items[${rowIndex}][kode_warna]`;
             newRow.querySelector('.keterangan-input').name = `items[${rowIndex}][keterangan]`;
-            newRow.querySelector('.ukuran-input').name = `items[${rowIndex}][ukuran]`;
+
+            const ukurInput = newRow.querySelector('.ukuran-input');
+            const ukurSelect = newRow.querySelector('.ukuran-select');
+            ukurInput.dataset.name = nameUkuran;
+            ukurSelect.dataset.name = nameUkuran;
+            ukurInput.name = nameUkuran;
+
             newRow.querySelector('.harga-input').name = `items[${rowIndex}][harga_satuan]`;
             newRow.querySelector('.qty-input').name = `items[${rowIndex}][qty]`;
             newRow.querySelector('.diskon-input').name = `items[${rowIndex}][diskon]`;
 
             // --- ISI DATA LAMA JIKA ADA ---
+            let initialUkuran = null;
             if(data) {
                 newRow.querySelector('.nama-produk-input').value = data.nama_produk;
-                newRow.querySelector('.ukuran-input').value = data.area_dinding; // Ukuran disimpan di area_dinding
+                initialUkuran = data.area_dinding; // Ukuran disimpan di area_dinding
+                newRow.querySelector('.ukuran-input').value = initialUkuran || '';
                 newRow.querySelector('.harga-input').value = data.harga_per_m2;
                 newRow.querySelector('.qty-input').value = data.volume;
 
@@ -233,34 +274,126 @@
                 container.appendChild(newRow);
             }
 
-            initRowEvents(newRow);
+            initRowEvents(newRow, initialUkuran);
             rowIndex++;
         }
 
-        function initRowEvents(row) {
+        function initRowEvents(row, initialUkuran = null) {
             const inputs = row.querySelectorAll('input, select');
             const removeBtn = row.querySelector('.remove-btn');
             const insertBtn = row.querySelector('.insert-btn');
             const nameInput = row.querySelector('.nama-produk-input');
             const hargaInput = row.querySelector('.harga-input');
+            const ukuranSelect = row.querySelector('.ukuran-select');
             const ukuranInput = row.querySelector('.ukuran-input');
+            const manualBox = row.querySelector('.ukuran-manual-box');
+            const switchBtn = row.querySelector('.btn-switch-to-select');
 
-            // Autocomplete Logic
-            nameInput.addEventListener('input', function() {
-                const val = this.value;
-                const options = document.getElementById('list-produk-db').options;
-                for (let i = 0; i < options.length; i++) {
-                    if (options[i].value === val) {
-                        if(hargaInput.value == "" || hargaInput.value == 0) {
-                            hargaInput.value = options[i].getAttribute('data-harga');
-                        }
-                        if(ukuranInput.value == "") {
-                            ukuranInput.value = options[i].getAttribute('data-kemasan');
-                        }
-                        calculateAll();
-                        break;
+            // Logika otomatis dropdown ukuran atau input manual
+            function applyUkuranOptions(selectedVal = null) {
+                const val = nameInput.value.trim().toLowerCase();
+                const prodData = productsDbMap[val];
+                const hasSizes = prodData && Array.isArray(prodData.variants) && prodData.variants.length > 0;
+                const nameAttr = ukuranSelect.dataset.name || ukuranInput.dataset.name || `items[0][ukuran]`;
+
+                if (hasSizes) {
+                    ukuranSelect.innerHTML = '<option value="">-- Ukuran --</option>';
+                    prodData.variants.forEach(variant => {
+                        const opt = document.createElement('option');
+                        opt.value = variant.ukuran;
+                        opt.textContent = `${variant.ukuran} (Stok: ${variant.stok})`;
+                        opt.dataset.harga = variant.harga;
+                        opt.dataset.stok = variant.stok;
+                        ukuranSelect.appendChild(opt);
+                    });
+                    const optManual = document.createElement('option');
+                    optManual.value = '__manual__';
+                    optManual.textContent = '✏️ Isi Manual...';
+                    ukuranSelect.appendChild(optManual);
+
+                    const curVal = selectedVal !== null ? selectedVal : (ukuranSelect.value && ukuranSelect.value !== '__manual__' ? ukuranSelect.value : ukuranInput.value.trim());
+
+                    if (curVal && prodData.ukuran.includes(curVal)) {
+                        ukuranSelect.value = curVal;
+                        ukuranSelect.classList.remove('hidden');
+                        manualBox.classList.add('hidden');
+                        ukuranSelect.name = nameAttr;
+                        ukuranInput.removeAttribute('name');
+                    } else if (curVal && curVal !== '') {
+                        ukuranSelect.value = '__manual__';
+                        ukuranSelect.classList.add('hidden');
+                        manualBox.classList.remove('hidden');
+                        switchBtn.classList.remove('hidden');
+                        ukuranInput.value = curVal;
+                        ukuranInput.name = nameAttr;
+                        ukuranSelect.removeAttribute('name');
+                    } else {
+                        ukuranSelect.selectedIndex = 1;
+                        ukuranSelect.classList.remove('hidden');
+                        manualBox.classList.add('hidden');
+                        ukuranSelect.name = nameAttr;
+                        ukuranInput.value = ukuranSelect.value;
+                        ukuranInput.removeAttribute('name');
+                    }
+                } else {
+                    ukuranSelect.classList.add('hidden');
+                    ukuranSelect.removeAttribute('name');
+                    manualBox.classList.remove('hidden');
+                    switchBtn.classList.add('hidden');
+                    ukuranInput.name = nameAttr;
+                    if (selectedVal !== null) {
+                        ukuranInput.value = selectedVal;
                     }
                 }
+            }
+
+            // Inisialisasi awal saat baris dibuat
+            applyUkuranOptions(initialUkuran);
+
+            nameInput.addEventListener('input', function() {
+                const val = this.value.trim().toLowerCase();
+                const prodData = productsDbMap[val];
+
+                if (prodData) {
+                    if (hargaInput.value == "" || hargaInput.value == 0) {
+                        hargaInput.value = prodData.harga;
+                    }
+                }
+                applyUkuranOptions();
+                calculateAll();
+            });
+
+            ukuranSelect.addEventListener('change', function() {
+                const nameAttr = this.dataset.name || ukuranInput.dataset.name || this.name || ukuranInput.name;
+                if (this.value === '__manual__') {
+                    ukuranSelect.classList.add('hidden');
+                    manualBox.classList.remove('hidden');
+                    switchBtn.classList.remove('hidden');
+                    ukuranInput.name = nameAttr;
+                    this.removeAttribute('name');
+                    ukuranInput.value = '';
+                    ukuranInput.focus();
+                } else {
+                    ukuranInput.value = this.value;
+                    const selectedOpt = this.options[this.selectedIndex];
+                    if (selectedOpt && selectedOpt.dataset.harga) {
+                        hargaInput.value = selectedOpt.dataset.harga;
+                    }
+                }
+                calculateAll();
+            });
+
+            switchBtn.addEventListener('click', function() {
+                const nameAttr = ukuranInput.dataset.name || ukuranSelect.dataset.name || ukuranInput.name || ukuranSelect.name;
+                manualBox.classList.add('hidden');
+                ukuranSelect.classList.remove('hidden');
+                ukuranSelect.name = nameAttr;
+                ukuranInput.removeAttribute('name');
+                if (ukuranSelect.value === '__manual__' || !ukuranSelect.value) {
+                    ukuranSelect.selectedIndex = 1;
+                }
+                ukuranInput.value = ukuranSelect.value;
+                calculateAll();
             });
 
             inputs.forEach(input => {
@@ -334,15 +467,27 @@
                 const nama = row.querySelector('.nama-produk-input');
                 const warna = row.querySelector('.kode-warna-input');
                 const ket = row.querySelector('.keterangan-input');
-                const ukur = row.querySelector('.ukuran-input');
+                const ukurInput = row.querySelector('.ukuran-input');
+                const ukurSelect = row.querySelector('.ukuran-select');
                 const harga = row.querySelector('.harga-input');
                 const qty = row.querySelector('.qty-input');
                 const diskon = row.querySelector('.diskon-input');
 
+                const ukurName = `items[${index}][ukuran]`;
+                if (ukurInput) ukurInput.dataset.name = ukurName;
+                if (ukurSelect) ukurSelect.dataset.name = ukurName;
+
+                if (ukurSelect && !ukurSelect.classList.contains('hidden')) {
+                    ukurSelect.name = ukurName;
+                    if (ukurInput) ukurInput.removeAttribute('name');
+                } else if (ukurInput) {
+                    ukurInput.name = ukurName;
+                    if (ukurSelect) ukurSelect.removeAttribute('name');
+                }
+
                 if (nama) nama.name = `items[${index}][nama_produk]`;
                 if (warna) warna.name = `items[${index}][kode_warna]`;
                 if (ket) ket.name = `items[${index}][keterangan]`;
-                if (ukur) ukur.name = `items[${index}][ukuran]`;
                 if (harga) harga.name = `items[${index}][harga_satuan]`;
                 if (qty) qty.name = `items[${index}][qty]`;
                 if (diskon) diskon.name = `items[${index}][diskon]`;

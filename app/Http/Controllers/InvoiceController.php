@@ -21,7 +21,7 @@ class InvoiceController extends Controller
 
         $isAdmin = auth()->check() && auth()->user()->role === 'admin';
 
-        $query = Invoice::with(['offer']);
+        $query = Invoice::with(['offer.items']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -72,12 +72,16 @@ class InvoiceController extends Controller
             ->whereNull('persiapan_confirmed_at')
             ->count();
 
+        // Ambil semua nama produk yang terdaftar di master data harga produk (lowercase)
+        $registeredProductNames = Product::pluck('nama_produk')->map(fn($p) => strtolower(trim($p)))->toArray();
+
         return view('invoice.histori', [
-            'invoices'         => $invoices,
-            'search'           => $search ?? '',
-            'status_gabungan'  => $status_gabungan ?? '',
-            'jenis'            => $jenis ?? '',
-            'persiapanCount'   => $persiapanCount,
+            'invoices'                => $invoices,
+            'search'                  => $search ?? '',
+            'status_gabungan'         => $status_gabungan ?? '',
+            'jenis'                   => $jenis ?? '',
+            'persiapanCount'          => $persiapanCount,
+            'registeredProductNames'  => $registeredProductNames,
         ]);
     }
 
@@ -631,7 +635,70 @@ class InvoiceController extends Controller
         }
 
         // =========================================================================
-        // VALIDASI STOK: Jika stok < total qty produk di invoice, invoice tidak bisa dipersiapkan
+        // 1. VALIDASI PRODUK TERDAFTAR:
+        // Hanya invoice produk yang SEMUA itemnya terdaftar di Master Harga Produk
+        // yang boleh dipersiapkan untuk Staff Gudang & Driver.
+        // =========================================================================
+        $produkTidakTerdaftarErrors = [];
+        $tidakAdaProdukErrors = [];
+        $bukanProdukErrors = [];
+
+        foreach ($invoices as $inv) {
+            // Hanya invoice berjenis 'produk' yang relevan untuk persiapan fisik produk
+            if ($inv->jenis !== 'produk') {
+                $bukanProdukErrors[] = "Invoice {$inv->no_invoice}: Hanya invoice berjenis 'Produk' yang dapat dipersiapkan untuk gudang.";
+                continue;
+            }
+
+            if (!$inv->offer || !$inv->offer->items || $inv->offer->items->isEmpty()) {
+                $tidakAdaProdukErrors[] = "Invoice {$inv->no_invoice}: Tidak memiliki item produk.";
+                continue;
+            }
+
+            $hasValidProduct = false;
+            foreach ($inv->offer->items as $item) {
+                if (empty($item->nama_produk)) {
+                    continue;
+                }
+                $qty = (int) round((float) ($item->volume ?? 0));
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $hasValidProduct = true;
+                $namaProduk = trim($item->nama_produk);
+                $product = $this->findProductVariant($namaProduk, $item->area_dinding);
+
+                // JIKA PRODUK TIDAK TERDAFTAR DI MASTER HARGA PRODUK: TOLAK!
+                if (!$product) {
+                    $produkTidakTerdaftarErrors[] = "Invoice {$inv->no_invoice}: Produk '{$namaProduk}'" . (!empty($item->area_dinding) && $item->area_dinding !== '-' ? " (Ukuran: {$item->area_dinding})" : '') . " tidak terdaftar di Data Master Harga Produk.";
+                }
+            }
+
+            if (!$hasValidProduct) {
+                $tidakAdaProdukErrors[] = "Invoice {$inv->no_invoice}: Tidak memiliki item produk dengan kuantitas yang valid untuk dipersiapkan.";
+            }
+        }
+
+        if (!empty($bukanProdukErrors)) {
+            $pesan = "Invoice tidak dapat dipersiapkan:\n• " . implode("\n• ", array_unique($bukanProdukErrors));
+            return redirect()->route('invoice.histori')->with('error', $pesan);
+        }
+
+        if (!empty($produkTidakTerdaftarErrors)) {
+            $pesan = "Invoice TIDAK DAPAT dipersiapkan karena terdapat produk yang tidak terdaftar di Data Master Harga Produk:\n• " 
+                . implode("\n• ", array_unique($produkTidakTerdaftarErrors)) 
+                . "\n\nSistem hanya mengizinkan persiapan untuk produk yang terdaftar di Data Master Harga Produk agar stok dapat dikelola oleh Staf Gudang dan Driver. Silakan daftarkan produk tersebut terlebih dahulu di menu Daftar Harga Produk.";
+            return redirect()->route('invoice.histori')->with('error', $pesan);
+        }
+
+        if (!empty($tidakAdaProdukErrors)) {
+            $pesan = "Invoice tidak dapat dipersiapkan:\n• " . implode("\n• ", array_unique($tidakAdaProdukErrors));
+            return redirect()->route('invoice.histori')->with('error', $pesan);
+        }
+
+        // =========================================================================
+        // 2. VALIDASI STOK: Jika stok < total qty produk di invoice, invoice tidak bisa dipersiapkan
         // =========================================================================
         $stokKurangErrors = [];
 
@@ -652,21 +719,25 @@ class InvoiceController extends Controller
                     continue;
                 }
 
-                $namaProduk = trim($item->nama_produk);
-                $kebutuhanInvoice[$namaProduk] = ($kebutuhanInvoice[$namaProduk] ?? 0) + $qty;
+                $product = $this->findProductVariant($item->nama_produk, $item->area_dinding);
+                if ($product) {
+                    $pid = $product->id;
+                    if (!isset($kebutuhanInvoice[$pid])) {
+                        $label = $product->nama_produk . (!empty($product->ukuran) ? " ({$product->ukuran})" : '');
+                        $kebutuhanInvoice[$pid] = [
+                            'product' => $product,
+                            'label'   => $label,
+                            'qty'     => 0,
+                        ];
+                    }
+                    $kebutuhanInvoice[$pid]['qty'] += $qty;
+                }
             }
 
-            // Cek setiap produk terdaftar terhadap stok di database
-            foreach ($kebutuhanInvoice as $namaProduk => $qtyDibutuhkan) {
-                $product = Product::where('nama_produk', $namaProduk)->first();
-                if (!$product) {
-                    $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
-                }
-
-                if ($product) {
-                    if ($product->stok < $qtyDibutuhkan) {
-                        $stokKurangErrors[] = "Invoice {$inv->no_invoice}: Produk '{$product->nama_produk}' (Stok tersedia: {$product->stok}, Dibutuhkan: {$qtyDibutuhkan})";
-                    }
+            // Cek setiap varian produk terdaftar terhadap stok di database
+            foreach ($kebutuhanInvoice as $info) {
+                if ($info['product']->stok < $info['qty']) {
+                    $stokKurangErrors[] = "Invoice {$inv->no_invoice}: Produk '{$info['label']}' (Stok tersedia: {$info['product']->stok}, Dibutuhkan: {$info['qty']})";
                 }
             }
         }
@@ -687,19 +758,25 @@ class InvoiceController extends Controller
                         continue;
                     }
 
-                    $namaProduk = trim($item->nama_produk);
-                    $totalKebutuhanGabungan[$namaProduk] = ($totalKebutuhanGabungan[$namaProduk] ?? 0) + $qty;
+                    $product = $this->findProductVariant($item->nama_produk, $item->area_dinding);
+                    if ($product) {
+                        $pid = $product->id;
+                        if (!isset($totalKebutuhanGabungan[$pid])) {
+                            $label = $product->nama_produk . (!empty($product->ukuran) ? " ({$product->ukuran})" : '');
+                            $totalKebutuhanGabungan[$pid] = [
+                                'product' => $product,
+                                'label'   => $label,
+                                'qty'     => 0,
+                            ];
+                        }
+                        $totalKebutuhanGabungan[$pid]['qty'] += $qty;
+                    }
                 }
             }
 
-            foreach ($totalKebutuhanGabungan as $namaProduk => $totalQty) {
-                $product = Product::where('nama_produk', $namaProduk)->first();
-                if (!$product) {
-                    $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
-                }
-
-                if ($product && $product->stok < $totalQty) {
-                    $stokKurangErrors[] = "Total kebutuhan produk '{$product->nama_produk}' dari seluruh invoice yang dipilih adalah {$totalQty}, sedangkan total stok tersedia hanya {$product->stok}.";
+            foreach ($totalKebutuhanGabungan as $info) {
+                if ($info['product']->stok < $info['qty']) {
+                    $stokKurangErrors[] = "Total kebutuhan produk '{$info['label']}' dari seluruh invoice yang dipilih adalah {$info['qty']}, sedangkan total stok tersedia hanya {$info['product']->stok}.";
                 }
             }
         }
@@ -806,6 +883,42 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Cari produk di tabel products berdasarkan nama_produk dan ukuran kemasan (jika ada).
+     */
+    private function findProductVariant($namaProduk, $ukuran = null)
+    {
+        $namaProduk = trim($namaProduk);
+        $ukuran = !empty($ukuran) && $ukuran !== '-' ? trim($ukuran) : null;
+
+        if ($ukuran) {
+            $product = Product::where('nama_produk', $namaProduk)
+                ->where('ukuran', $ukuran)
+                ->first();
+            if (!$product) {
+                $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])
+                    ->whereRaw('LOWER(TRIM(ukuran)) = ?', [strtolower($ukuran)])
+                    ->first();
+            }
+            if (!$product) {
+                $cleanUkuran = preg_replace('/\s+/', '', strtolower($ukuran));
+                $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])
+                    ->whereRaw("REPLACE(LOWER(TRIM(COALESCE(ukuran, ''))), ' ', '') = ?", [$cleanUkuran])
+                    ->first();
+            }
+            if ($product) {
+                return $product;
+            }
+        }
+
+        // Fallback: cari berdasarkan nama_produk saja
+        $product = Product::where('nama_produk', $namaProduk)->first();
+        if (!$product) {
+            $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
+        }
+        return $product;
+    }
+
+    /**
      * Kurangi stok produk terdaftar di database secara otomatis berdasarkan item invoice.
      */
     private function kurangiStokProdukDariInvoice(Invoice $invoice)
@@ -828,13 +941,7 @@ class InvoiceController extends Controller
                     continue;
                 }
 
-                $namaProduk = trim($item->nama_produk);
-
-                // Cari produk di tabel products (exact match atau case-insensitive)
-                $product = Product::where('nama_produk', $namaProduk)->first();
-                if (!$product) {
-                    $product = Product::whereRaw('LOWER(TRIM(nama_produk)) = ?', [strtolower($namaProduk)])->first();
-                }
+                $product = $this->findProductVariant($item->nama_produk, $item->area_dinding);
 
                 // Jika produk terdaftar di tabel products, kurangi stoknya
                 if ($product) {

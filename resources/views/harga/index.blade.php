@@ -106,6 +106,12 @@
                         <th scope="col" class="px-6 py-3 text-center">
                             Hasil Akhir
                         </th>
+                        <th scope="col" class="px-6 py-3">
+                            Pilihan Ukuran
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-center">
+                            Total Stok
+                        </th>
                         <th scope="col" class="px-6 py-3 text-right">
                             Harga
                         </th>
@@ -139,9 +145,44 @@
                             {{ $product->hasil_akhir }}
                         </td>
 
+                        {{-- Pilihan Ukuran --}}
+                        <td class="px-6 py-4">
+                            @php
+                                $sizeVariants = $product->variants->filter(fn($v) => !empty($v->ukuran));
+                            @endphp
+                            @if($sizeVariants->count() > 0)
+                                <div class="flex flex-wrap gap-1.5 max-w-[240px]">
+                                    @foreach($sizeVariants as $v)
+                                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold px-2 py-0.5 rounded shadow-sm" title="Ukuran {{ $v->ukuran }} - Stok: {{ $v->stok }}">
+                                            <span>{{ $v->ukuran }}</span>
+                                            <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 py-0.2 rounded font-medium">Stok: {{ $v->stok }}</span>
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-gray-500 text-xs italic">Umum (Stok: {{ $product->stok }})</span>
+                            @endif
+                        </td>
+
+                        {{-- Total Stok --}}
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 shadow-2xs">
+                                {{ $product->stok }} Unit
+                            </span>
+                        </td>
+
                         {{-- Harga --}}
                         <td class="px-6 py-4 font-semibold text-right whitespace-nowrap text-gray-900">
-                            Rp {{ number_format($product->harga, 0, ',', '.') }} <span class="text-gray-500 font-normal text-xs">/m²</span>
+                            @php
+                                $minHarga = $product->variants->min('harga') ?? $product->harga;
+                                $maxHarga = $product->variants->max('harga') ?? $product->harga;
+                            @endphp
+                            @if($minHarga != $maxHarga)
+                                <span>Rp {{ number_format($minHarga, 0, ',', '.') }} - {{ number_format($maxHarga, 0, ',', '.') }}</span>
+                            @else
+                                <span>Rp {{ number_format($minHarga, 0, ',', '.') }}</span>
+                            @endif
+                            <span class="text-gray-500 font-normal text-xs">/m²</span>
                         </td>
 
                         {{-- Action --}}
@@ -159,7 +200,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-10 text-center text-gray-500">
                             <div class="flex flex-col items-center justify-center space-y-2">
                                 <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 <p class="text-base font-semibold text-gray-700">Data tidak ditemukan</p>
