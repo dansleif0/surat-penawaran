@@ -31,4 +31,20 @@ class RecapItem extends Model {
     public function recap() {
         return $this->belongsTo(Recap::class);
     }
+
+    /**
+     * Ambil data model Product jika item ini merupakan produk yang terdaftar di master data.
+     */
+    public function getMatchedProductAttribute()
+    {
+        return Product::findVariant($this->material, $this->ukuran);
+    }
+
+    /**
+     * Cek apakah item ini merupakan produk yang telah terdaftar di database.
+     */
+    public function isRegisteredProduct(): bool
+    {
+        return $this->matched_product !== null;
+    }
 }

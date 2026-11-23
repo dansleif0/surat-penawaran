@@ -52,10 +52,98 @@ class RecapController extends Controller
 
     public function show($id)
     {
-        // Eager load untuk performa: ambil recap, items, dan offer sekaligus
+        // Eager load untuk performa: ambil recap, items, offer, dan confirmer
+        $recap = Recap::with(['items', 'offer', 'confirmer'])->findOrFail($id);
+
+        // Ambil daftar produk terdaftar pada rekapan ini beserta info stoknya
+        $registeredItems = [];
+        $unregisteredItems = [];
+
+        foreach ($recap->items as $item) {
+            $product = Product::findVariant($item->material, $item->ukuran);
+            if ($product) {
+                $registeredItems[] = [
+                    'item'          => $item,
+                    'product'       => $product,
+                    'stok_sekarang' => (int) $product->stok,
+                    'qty_butuh'     => (int) round((float) $item->qty),
+                    'stok_cukup'    => (int) $product->stok >= (int) round((float) $item->qty),
+                ];
+            } else {
+                $unregisteredItems[] = $item;
+            }
+        }
+
+        return view('recap.show', compact('recap', 'registeredItems', 'unregisteredItems'));
+    }
+
+    /**
+     * Konfirmasi rekapan proyek oleh Staff Gudang (atau Admin).
+     * Secara otomatis memotong stok produk yang telah terdaftar di database.
+     */
+    public function konfirmasi(Request $request, $id)
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['staff_gudang', 'admin'])) {
+            return redirect()->route('recap.show', $id)
+                ->with('error', 'Hanya Staff Gudang atau Administrator yang dapat mengonfirmasi pengeluaran rekapan proyek.');
+        }
+
         $recap = Recap::with(['items', 'offer'])->findOrFail($id);
 
-        return view('recap.show', compact('recap'));
+        if ($recap->isConfirmed()) {
+            return redirect()->route('recap.show', $id)
+                ->with('error', 'Rekapan proyek ini sudah pernah dikonfirmasi sebelumnya.');
+        }
+
+        $deductedProducts = [];
+
+        DB::transaction(function () use ($recap, &$deductedProducts) {
+            foreach ($recap->items as $item) {
+                if (empty($item->material)) {
+                    continue;
+                }
+
+                $qty = (int) round((float) ($item->qty ?? 0));
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $product = Product::findVariant($item->material, $item->ukuran);
+                if ($product) {
+                    $stokAwal = (int) $product->stok;
+                    $product->decrement('stok', $qty);
+                    $stokSisa = (int) $product->fresh()->stok;
+
+                    $ukuranTampil = $product->ukuran ?: ($item->ukuran ?: '-');
+                    $deductedProducts[] = [
+                        'nama'       => $product->nama_produk,
+                        'ukuran'     => $ukuranTampil,
+                        'qty'        => $qty,
+                        'stok_awal'  => $stokAwal,
+                        'stok_sisa'  => $stokSisa,
+                    ];
+                }
+            }
+
+            $recap->update([
+                'status'       => 'terkonfirmasi',
+                'confirmed_at' => now(),
+                'confirmed_by' => auth()->id(),
+            ]);
+        });
+
+        if (!empty($deductedProducts)) {
+            $details = array_map(function ($d) {
+                $uk = $d['ukuran'] && $d['ukuran'] !== '-' ? " ({$d['ukuran']})" : '';
+                return "• {$d['nama']}{$uk}: dipotong {$d['qty']} (Sisa stok gudang: {$d['stok_sisa']})";
+            }, $deductedProducts);
+
+            $msg = "Rekapan proyek berhasil dikonfirmasi! Stok untuk " . count($deductedProducts) . " produk terdaftar telah dipotong:\n" . implode("\n", $details);
+        } else {
+            $msg = "Rekapan proyek berhasil dikonfirmasi menjadi 'Terkonfirmasi'. Tidak ada pemotongan stok karena tidak terdapat produk yang terdaftar pada rekapan ini.";
+        }
+
+        return redirect()->route('recap.show', $recap->id)->with('success', $msg);
     }
 
     public function print($id)

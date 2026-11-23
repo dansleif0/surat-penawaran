@@ -223,6 +223,40 @@
                             </span>
                         @endif
                     </a>
+
+                    {{-- Histori Rekapan Proyek untuk Staff Gudang --}}
+                    @if(Auth::user()->role === 'staff_gudang')
+                        @php
+                            $registeredProductNames = \App\Models\Product::pluck('nama_produk')->unique()->filter()->values()->toArray();
+                            $sidebarRecapWaitingCount = \App\Models\Recap::where(function($q) {
+                                    $q->where('status', 'belum_dikonfirmasi')->orWhereNull('status');
+                                })
+                                ->whereNull('confirmed_at')
+                                ->whereHas('items', function($q) use ($registeredProductNames) {
+                                    $q->whereIn('material', $registeredProductNames);
+                                })
+                                ->count();
+                        @endphp
+                        <a href="{{ route('recap.index') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all duration-200 group mt-2 {{ request()->routeIs('recap.*') ? 'bg-slate-700/50 text-white' : '' }}">
+                            <span class="relative mr-3 p-2 bg-slate-800 rounded-lg group-hover:bg-emerald-500 transition-colors {{ request()->routeIs('recap.*') ? 'bg-emerald-500 text-white' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                {{-- Badge notifikasi jika ada rekapan produk terdaftar yang belum dikonfirmasi --}}
+                                @if($sidebarRecapWaitingCount > 0)
+                                    <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 bg-amber-500 rounded-full text-white text-[9px] font-black ring-2 ring-slate-900 animate-ping-slow">
+                                        {{ $sidebarRecapWaitingCount > 9 ? '9+' : $sidebarRecapWaitingCount }}
+                                    </span>
+                                @endif
+                            </span>
+                            <span class="font-medium flex-1">Histori Rekapan Proyek</span>
+                            @if($sidebarRecapWaitingCount > 0)
+                                <span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                    {{ $sidebarRecapWaitingCount }} menunggu
+                                </span>
+                            @endif
+                        </a>
+                    @endif
                 @endif
             </nav>
 
@@ -267,7 +301,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span class="text-sm font-semibold">{{ session('success') }}</span>
+                            <div class="text-sm font-semibold leading-relaxed">{!! nl2br(e(session('success'))) !!}</div>
                         </div>
                         <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-700 text-lg font-bold leading-none">&times;</button>
                     </div>

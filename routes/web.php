@@ -74,6 +74,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/konfirmasi-semua-persiapan', [InvoiceController::class, 'konfirmasiSemuaPersiapan'])->name('konfirmasi_semua_persiapan');
     });
 
+    // --- REKAPAN PROYEK (Dapat Diakses & Dilihat oleh Admin dan Staff Gudang) ---
+    Route::middleware(['role:admin,staff_gudang'])->group(function () {
+        Route::get('/recap/history', [RecapController::class, 'index'])->name('recap.index');
+        Route::get('/recap/show/{id}', [RecapController::class, 'show'])->name('recap.show');
+        Route::post('/recap/{id}/konfirmasi', [RecapController::class, 'konfirmasi'])->name('recap.konfirmasi');
+        Route::get('/recap/print/{id}', [RecapController::class, 'print'])->name('recap.print');
+        Route::get('/recap/export/excel/{id}', [RecapController::class, 'exportExcel'])->name('recap.export.excel');
+        Route::get('/recap/export/word/{id}', [RecapController::class, 'exportWord'])->name('recap.export.word');
+    });
+
     // --- FITUR KHUSUS ADMINISTRATOR (Harga, Penawaran, BAST, Rekap, SPK) ---
     Route::middleware(['role:admin'])->group(function () {
 
@@ -120,22 +130,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{id}/print', [BastController::class, 'print'])->name('print');
         });
 
-        //--- Pembuatan REKAP
+        // --- Pembuatan, Edit, & Hapus REKAP (Khusus Admin) ---
         Route::get('/recap/create/{offer}', [RecapController::class, 'create'])->name('histori.recap');
         Route::post('/recap/store', [RecapController::class, 'store'])->name('recap.store');
-        Route::get('/recap/history', [RecapController::class, 'index'])->name('recap.index');
-        Route::get('/recap/show/{id}', [RecapController::class, 'show'])->name('recap.show');
-        Route::get('/recap/print/{id}', [RecapController::class, 'print'])->name('recap.print');
-        Route::delete('/recap/delete/{id}', [RecapController::class, 'destroy'])->name('recap.destroy');
-        // Route untuk Edit & Update
         Route::get('/recap/{id}/edit', [RecapController::class, 'edit'])->name('recap.edit');
         Route::put('/recap/{id}', [RecapController::class, 'update'])->name('recap.update');
-
-        // Route untuk Delete
+        Route::delete('/recap/delete/{id}', [RecapController::class, 'destroy'])->name('recap.destroy');
         Route::delete('/recap/{id}', [RecapController::class, 'destroy'])->name('recap.destroy');
-
-        Route::get('/recap/export/excel/{id}', [RecapController::class, 'exportExcel'])->name('recap.export.excel');
-        Route::get('/recap/export/word/{id}', [RecapController::class, 'exportWord'])->name('recap.export.word');
 
         // --- SPK (Surat Perintah Kerja) ---
         Route::prefix('spk')->name('skp.')->group(function () {

@@ -14,15 +14,26 @@
                 </nav>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Histori Rekapan Proyek</h1>
+                    @if(Auth::check() && Auth::user()->role === 'admin')
                     <span class="px-2.5 py-0.5 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200/60">
                         Analisis Margin
                     </span>
+                    @else
+                    <span class="px-2.5 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200/60">
+                        Pengeluaran Gudang
+                    </span>
+                    @endif
                 </div>
                 <p class="text-slate-500 text-xs md:text-sm mt-1">
+                    @if(Auth::check() && Auth::user()->role === 'admin')
                     Pantau perbandingan total omzet penawaran, modal pengeluaran, dan net profit (laba/rugi) proyek secara transparan.
+                    @else
+                    Pantau dan konfirmasi pengeluaran stok produk untuk seluruh proyek yang sedang berjalan.
+                    @endif
                 </p>
             </div>
 
+            @if(Auth::check() && Auth::user()->role === 'admin')
             <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
                 <a href="{{ route('histori.index', ['jenis' => 'proyek']) }}" 
                    style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff !important;"
@@ -33,9 +44,11 @@
                     <span>+ Rekap dari Penawaran Proyek</span>
                 </a>
             </div>
+            @endif
         </div>
 
-        {{-- Kartu Statistik Ringkasan Finansial --}}
+        {{-- Kartu Statistik Ringkasan: Khusus Admin Menampilkan Finansial, Staff Gudang Menampilkan Ringkasan Stok/Status --}}
+        @if(Auth::check() && Auth::user()->role === 'admin')
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {{-- Card 1: Total Omzet --}}
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90 relative overflow-hidden">
@@ -106,6 +119,62 @@
                 </p>
             </div>
         </div>
+        @else
+        {{-- Kartu Ringkasan Operasional Gudang (Staff Gudang) --}}
+        @php
+            $staffTotalRecap = $recaps->total();
+            $staffBelumKonfirmasi = \App\Models\Recap::where(function($q) {
+                $q->where('status', 'belum_dikonfirmasi')->orWhereNull('status');
+            })->whereNull('confirmed_at')->count();
+            $staffTerkonfirmasi = \App\Models\Recap::where('status', 'terkonfirmasi')->orWhereNotNull('confirmed_at')->count();
+        @endphp
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Total Rekapan Proyek</span>
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                        📋
+                    </div>
+                </div>
+                <p class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                    {{ $staffTotalRecap }} <span class="text-xs font-semibold text-slate-500">Proyek</span>
+                </p>
+                <p class="text-[11px] text-slate-500 mt-1 font-medium">
+                    Semua rekapan biaya proyek yang dibuat
+                </p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-extrabold text-amber-500 uppercase tracking-wider">Belum Dikonfirmasi</span>
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
+                        ⏳
+                    </div>
+                </div>
+                <p class="text-xl md:text-2xl font-black text-amber-600 tracking-tight">
+                    {{ $staffBelumKonfirmasi }} <span class="text-xs font-semibold text-amber-700">Menunggu</span>
+                </p>
+                <p class="text-[11px] text-slate-500 mt-1 font-medium">
+                    Membutuhkan pengecekan & konfirmasi stok
+                </p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider">Telah Dikonfirmasi</span>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                        ✓
+                    </div>
+                </div>
+                <p class="text-xl md:text-2xl font-black text-emerald-600 tracking-tight">
+                    {{ $staffTerkonfirmasi }} <span class="text-xs font-semibold text-emerald-700">Selesai</span>
+                </p>
+                <p class="text-[11px] text-slate-500 mt-1 font-medium">
+                    Stok produk telah dipotong dari inventori
+                </p>
+            </div>
+        </div>
+        @endif
 
         {{-- Bar Pencarian & Filter --}}
         <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200/90 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -138,6 +207,30 @@
             </div>
         </div>
 
+        {{-- Notifikasi Khusus Staff Gudang: Rekapan Menunggu Konfirmasi Pengeluaran Barang --}}
+        @if(Auth::check() && Auth::user()->role === 'staff_gudang')
+            @php
+                $unconfirmedWithProducts = $recaps->filter(function($r) {
+                    return !$r->isConfirmed() && $r->items->some(fn($it) => $it->isRegisteredProduct());
+                })->count();
+            @endphp
+            @if($unconfirmedWithProducts > 0)
+                <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200/90 text-amber-900 flex items-start sm:items-center justify-between gap-4 shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300/60 flex items-center justify-center text-xl flex-shrink-0">
+                            📦
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-amber-900">Pemberitahuan Konfirmasi Pengeluaran Barang</h4>
+                            <p class="text-xs text-amber-800 font-medium mt-0.5">
+                                Terdapat <strong>{{ $unconfirmedWithProducts }} rekapan proyek</strong> di halaman ini yang memuat produk terdaftar dan membutuhkan konfirmasi pengeluaran stok.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endif
+
         {{-- Tabel Data Rekapan --}}
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200/90 overflow-visible">
             <div class="overflow-x-auto min-h-[380px] pb-16">
@@ -146,11 +239,14 @@
                         <tr>
                             <th class="py-4 px-4 w-32 whitespace-nowrap">Tanggal</th>
                             <th class="py-4 px-4 min-w-[220px]">Proyek & Klien</th>
+                            @if(Auth::check() && Auth::user()->role === 'admin')
                             <th class="py-4 px-4 w-40 text-right whitespace-nowrap">Nilai Penawaran (Omzet)</th>
                             <th class="py-4 px-4 w-40 text-right whitespace-nowrap">Modal (Pengeluaran)</th>
                             <th class="py-4 px-4 w-44 text-right whitespace-nowrap">Net Profit (Laba)</th>
                             <th class="py-4 px-4 w-32 text-center whitespace-nowrap">Status Margin</th>
-                            <th class="py-4 px-4 w-36 text-center whitespace-nowrap">Aksi</th>
+                            @endif
+                            <th class="py-4 px-4 w-36 text-center whitespace-nowrap">Status Konfirmasi</th>
+                            <th class="py-4 px-4 w-32 text-center whitespace-nowrap">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -192,6 +288,7 @@
                                 </div>
                             </td>
 
+                            @if(Auth::check() && Auth::user()->role === 'admin')
                             {{-- 3. Nilai Penawaran (Omzet) --}}
                             <td class="py-4 px-4 align-top text-right">
                                 <span class="text-sm font-black text-slate-800 block whitespace-nowrap">
@@ -236,8 +333,41 @@
                                     </span>
                                 @endif
                             </td>
+                            @endif
 
-                            {{-- 7. Aksi Dropdown --}}
+                            {{-- 7. Status Konfirmasi Gudang --}}
+                            <td class="py-4 px-4 align-top text-center whitespace-nowrap">
+                                @if($recap->isConfirmed())
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Terkonfirmasi
+                                    </span>
+                                    @if($recap->confirmed_at)
+                                        <span class="block text-[9px] text-slate-400 font-medium mt-1">
+                                            {{ \Carbon\Carbon::parse($recap->confirmed_at)->format('d/m/Y H:i') }}
+                                        </span>
+                                    @endif
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        Belum Konfirmasi
+                                    </span>
+                                    @php
+                                        $hasRegistered = $recap->items->some(fn($it) => $it->isRegisteredProduct());
+                                    @endphp
+                                    @if($hasRegistered)
+                                        <span class="block text-[9px] text-blue-600 font-bold mt-1">
+                                            📦 Ada Produk Stok
+                                        </span>
+                                    @else
+                                        <span class="block text-[9px] text-slate-400 font-medium mt-1">
+                                            Non-Stok
+                                        </span>
+                                    @endif
+                                @endif
+                            </td>
+
+                            {{-- 8. Aksi Dropdown --}}
                             <td class="py-4 px-4 align-top text-center">
                                 <div x-data="{ open: false }" class="relative inline-block text-left" @click.away="open = false">
                                     <button @click="open = !open" 
@@ -278,6 +408,7 @@
                                             </a>
                                         </div>
 
+                                        @if(Auth::check() && Auth::user()->role === 'admin')
                                         <div class="py-1">
                                             <a href="{{ route('recap.edit', $recap->id) }}" class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">
                                                 <span class="text-sm">✏️</span>
@@ -295,24 +426,31 @@
                                                 </button>
                                             </form>
                                         </div>
+                                        @endif
                                     </div>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="{{ (Auth::check() && Auth::user()->role === 'admin') ? 8 : 4 }}" class="py-12 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center gap-2">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-2xl text-slate-400">
                                         📋
                                     </div>
                                     <p class="text-sm font-bold text-slate-600">Belum ada data rekapan biaya proyek.</p>
+                                    @if(Auth::check() && Auth::user()->role === 'admin')
                                     <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
                                         Anda dapat membuat analisis rekapan biaya modal proyek melalui menu <strong>Histori Penawaran</strong> &rarr; pilih penawaran proyek &rarr; klik tombol <strong>📋 Buat Rekapan</strong>.
                                     </p>
                                     <a href="{{ route('histori.index', ['jenis' => 'proyek']) }}" class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs">
                                         Buka Histori Penawaran Proyek
                                     </a>
+                                    @else
+                                    <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+                                        Saat ini belum ada data rekapan biaya proyek yang dibuat oleh Administrator.
+                                    </p>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
