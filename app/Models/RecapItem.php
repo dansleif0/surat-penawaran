@@ -12,6 +12,7 @@ class RecapItem extends Model {
         'tanggal_item', // Tambahkan ini agar tanggal bisa disimpan ke DB
         'material',
         'kategori',
+        'ukuran',
         'detail',
         'harga',
         'qty',

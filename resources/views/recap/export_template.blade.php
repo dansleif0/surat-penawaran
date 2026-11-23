@@ -28,7 +28,8 @@
             <tr class="bg-gray">
                 <th style="width: 120px; text-align: center;">Tgl Keluar</th>
                 <th>Deskripsi</th>
-                <th style="width: 140px;">Kategori</th>
+                <th style="width: 130px;">Kategori</th>
+                <th style="width: 90px; text-align: center;">Ukuran</th>
                 <th style="width: 50px; text-align: center;">Qty</th>
                 <th style="text-align: right;">Harga Satuan</th>
                 <th style="text-align: right;">Subtotal</th>
@@ -52,7 +53,8 @@
                         <br><small style="color: #666;">{{ $item->detail }}</small>
                     @endif
                 </td>
-                <td>{{ $item->kategori ?? '-' }}</td>
+                <td>{{ $item->kategori ? ucwords($item->kategori) : '-' }}</td>
+                <td class="text-center">{{ $item->ukuran ?: '-' }}</td>
                 <td class="text-center">{{ $item->qty }}</td>
                 <td class="text-right">{{ number_format($item->harga, 0, ',', '.') }}</td>
                 <td class="text-right">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
@@ -61,15 +63,15 @@
         </tbody>
         <tfoot>
             <tr class="total">
-                <td colspan="5" class="text-right">TOTAL PENAWARAN</td>
+                <td colspan="6" class="text-right">TOTAL PENAWARAN</td>
                 <td class="text-right">{{ number_format($recap->total_penawaran_klien, 0, ',', '.') }}</td>
             </tr>
             <tr class="total">
-                <td colspan="5" class="text-right">TOTAL MODAL</td>
+                <td colspan="6" class="text-right">TOTAL MODAL</td>
                 <td class="text-right">{{ number_format($recap->total_pengeluaran, 0, ',', '.') }}</td>
             </tr>
             <tr class="total">
-                <td colspan="5" class="text-right">NET PROFIT (LABA)</td>
+                <td colspan="6" class="text-right">NET PROFIT (LABA)</td>
                 <td class="text-right" style="color: {{ $recap->margin >= 0 ? '#008000' : '#FF0000' }}">
                     {{ number_format($recap->margin, 0, ',', '.') }}
                 </td>

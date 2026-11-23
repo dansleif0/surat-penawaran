@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Offer;
 use App\Models\Recap;
 use App\Models\RecapItem;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
 class RecapController extends Controller
@@ -16,16 +17,33 @@ class RecapController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $recaps = Recap::with('offer')
-            ->when($search, function ($query) use ($search) {
-                $query->whereHas('offer', function ($q) use ($search) {
-                    $q->where('nama_klien', 'like', "%$search%");
-                })->orWhere('no_recap', 'like', "%$search%");
-            })
-            ->latest()
-            ->paginate(15);
+        $query = Recap::with(['offer', 'items']);
 
-        return view('recap.index', compact('recaps', 'search'));
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('offer', function ($o) use ($search) {
+                    $o->where('nama_klien', 'like', "%{$search}%")
+                      ->orWhere('client_details', 'like', "%{$search}%");
+                })->orWhere('id', $search)
+                  ->orWhere('offer_id', $search);
+            });
+        }
+
+        $totalOmzet = (clone $query)->sum('total_penawaran_klien');
+        $totalPengeluaran = (clone $query)->sum('total_pengeluaran');
+        $totalMargin = (clone $query)->sum('margin');
+        $totalProyek = (clone $query)->count();
+
+        $recaps = $query->latest()->paginate(15)->withQueryString();
+
+        return view('recap.index', compact(
+            'recaps',
+            'search',
+            'totalOmzet',
+            'totalPengeluaran',
+            'totalMargin',
+            'totalProyek'
+        ));
     }
 
     /**
@@ -79,11 +97,13 @@ class RecapController extends Controller
         $offer->load(['items', 'jasaItems']);
 
         // Hitung total penawaran klien untuk referensi
-        $totalProduk = $offer->items->sum(fn($i) => $i->volume * $i->harga_per_m2);
-        $totalJasa = $offer->jasaItems->sum('harga_jasa');
-        $grandTotalOffer = $totalProduk + $totalJasa;
+        $totalProduk = $offer->items->sum(fn($i) => (float)$i->volume * (float)$i->harga_per_m2);
+        $totalJasa = $offer->jasaItems->sum(fn($j) => (float)($j->harga_jasa ?? ((float)$j->volume * (float)$j->harga_satuan)));
+        $grandTotalOffer = (float)($offer->total_keseluruhan ?: ($totalProduk + $totalJasa));
 
-        return view('recap.create', compact('offer', 'grandTotalOffer'));
+        $products = Product::orderBy('nama_produk')->get();
+
+        return view('recap.create', compact('offer', 'grandTotalOffer', 'products'));
     }
 
     /**
@@ -101,12 +121,34 @@ class RecapController extends Controller
             'items' => 'required|array',
         ]);
 
+        $totalPenawaran = (float)($request->total_penawaran_klien ?? 0);
+        $totalPengeluaran = (float)($request->total_pengeluaran ?? 0);
+
+        // Jika total pengeluaran 0 di request, hitung otomatis dari items
+        if ($totalPengeluaran <= 0 && is_array($request->items)) {
+            foreach ($request->items as $it) {
+                if (!empty($it['material'])) {
+                    $totalPengeluaran += ((float)($it['harga'] ?? 0) * (float)($it['qty'] ?? 1));
+                }
+            }
+        }
+
+        $tanggalKeluar = $request->tanggal_keluar;
+        if (!$tanggalKeluar && is_array($request->items)) {
+            foreach ($request->items as $it) {
+                if (!empty($it['tanggal_item'])) {
+                    $tanggalKeluar = $it['tanggal_item'];
+                    break;
+                }
+            }
+        }
+
         $recap = Recap::create([
             'offer_id' => $request->offer_id,
-            'tanggal_keluar' => $request->tanggal_keluar,
-            'total_penawaran_klien' => $request->total_penawaran_klien,
-            'total_pengeluaran' => $request->total_pengeluaran,
-            'margin' => $request->total_penawaran_klien - $request->total_pengeluaran,
+            'tanggal_keluar' => $tanggalKeluar ?: now()->toDateString(),
+            'total_penawaran_klien' => $totalPenawaran,
+            'total_pengeluaran' => $totalPengeluaran,
+            'margin' => $totalPenawaran - $totalPengeluaran,
         ]);
 
         foreach ($request->items as $item) {
@@ -115,6 +157,7 @@ class RecapController extends Controller
                     'tanggal_item' => $item['tanggal_item'] ?? null,
                     'material'     => $item['material'],
                     'kategori'     => $item['kategori'] ?? null,
+                    'ukuran'       => $item['ukuran'] ?? null,
                     'detail'       => $item['detail'] ?? null,
                     'harga'        => $item['harga'] ?? 0,
                     'qty'          => $item['qty'] ?? 0,
@@ -131,7 +174,8 @@ class RecapController extends Controller
     public function edit($id)
     {
         $recap = Recap::with(['items', 'offer'])->findOrFail($id);
-        return view('recap.edit', compact('recap'));
+        $products = Product::orderBy('nama_produk')->get();
+        return view('recap.edit', compact('recap', 'products'));
     }
 
     public function update(Request $request, $id)
@@ -139,11 +183,22 @@ class RecapController extends Controller
         // Cari rekapan utama
         $recap = Recap::findOrFail($id);
 
+        $totalPenawaran = (float)($request->total_penawaran_klien ?? $recap->total_penawaran_klien ?? 0);
+        $totalPengeluaran = (float)($request->total_pengeluaran ?? 0);
+
+        if ($totalPengeluaran <= 0 && is_array($request->items)) {
+            foreach ($request->items as $it) {
+                if (!empty($it['material'])) {
+                    $totalPengeluaran += ((float)($it['harga'] ?? 0) * (float)($it['qty'] ?? 1));
+                }
+            }
+        }
+
         // Update Data Kepala Rekapan
         $recap->update([
-            'total_penawaran_klien' => $request->total_penawaran_klien,
-            'total_pengeluaran' => $request->total_pengeluaran,
-            'margin' => $request->total_penawaran_klien - $request->total_pengeluaran,
+            'total_penawaran_klien' => $totalPenawaran,
+            'total_pengeluaran' => $totalPengeluaran,
+            'margin' => $totalPenawaran - $totalPengeluaran,
         ]);
 
         // Hapus semua item lama terlebih dahulu (Sinkronisasi Item)
@@ -158,6 +213,7 @@ class RecapController extends Controller
                         'tanggal_item' => $item['tanggal_item'] ?? null,
                         'material'     => $item['material'],
                         'kategori'     => $item['kategori'] ?? null,
+                        'ukuran'       => $item['ukuran'] ?? null,
                         'detail'       => $item['detail'] ?? null,
                         'harga'        => $item['harga'] ?? 0,
                         'qty'          => $item['qty'] ?? 1,

@@ -153,18 +153,19 @@
                 <thead>
                     {{-- HEADER SUBTITEL AUDIT --}}
                     <tr>
-                        <th colspan="6" class="border border-black p-2.5 text-center font-bold text-base bg-white">
+                        <th colspan="7" class="border border-black p-2.5 text-center font-bold text-base bg-white">
                             Audit Material & Pekerjaan
                         </th>
                     </tr>
                     {{-- HEADER KOLOM --}}
                     <tr class="bg-[#d9e1f2] text-black font-bold">
-                        <th class="border border-black p-2 text-left w-[15%]">TGL Keluar</th>
-                        <th class="border border-black p-2 text-left w-[25%]">Item/Deskripsi</th>
-                        <th class="border border-black p-2 text-left w-[20%]">Kategori</th>
-                        <th class="border border-black p-2 text-center w-[10%]">QTY</th>
-                        <th class="border border-black p-2 text-right w-[15%]">Harga satuan</th>
-                        <th class="border border-black p-2 text-right w-[15%]">Subtotal</th>
+                        <th class="border border-black p-2 text-left w-[13%]">TGL Keluar</th>
+                        <th class="border border-black p-2 text-left w-[24%]">Item/Deskripsi</th>
+                        <th class="border border-black p-2 text-left w-[15%]">Kategori</th>
+                        <th class="border border-black p-2 text-center w-[12%]">Ukuran</th>
+                        <th class="border border-black p-2 text-center w-[8%]">QTY</th>
+                        <th class="border border-black p-2 text-right w-[14%]">Harga satuan</th>
+                        <th class="border border-black p-2 text-right w-[14%]">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -189,6 +190,9 @@
                             {{ $item->kategori ?? '-' }}
                         </td>
                         <td class="border border-black p-2 text-center font-medium">
+                            {{ $item->ukuran ?: '-' }}
+                        </td>
+                        <td class="border border-black p-2 text-center font-medium">
                             {{ $item->qty + 0 }}
                         </td>
                         <td class="border border-black p-2 text-right whitespace-nowrap">
@@ -200,7 +204,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="border border-black p-4 text-center text-gray-500 italic">
+                        <td colspan="7" class="border border-black p-4 text-center text-gray-500 italic">
                             Belum ada rincian item pengeluaran.
                         </td>
                     </tr>
@@ -208,7 +212,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="4" class="border border-black p-2 font-bold text-right text-base" style="border-right: none;">
+                        <td colspan="5" class="border border-black p-2 font-bold text-right text-base" style="border-right: none;">
                             Total Modal Akhir
                         </td>
                         <td colspan="2" class="border border-black p-2 font-bold text-right text-base" style="border-left: none;">
