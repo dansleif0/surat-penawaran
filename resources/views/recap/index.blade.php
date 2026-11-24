@@ -122,11 +122,15 @@
         @else
         {{-- Kartu Ringkasan Operasional Gudang (Staff Gudang) --}}
         @php
-            $staffTotalRecap = $recaps->total();
+            $staffTotalRecap = method_exists($recaps, 'total') ? $recaps->total() : $recaps->count();
+            $registeredProductNames = \App\Models\Product::pluck('nama_produk')->unique()->filter()->values()->toArray();
             $staffBelumKonfirmasi = \App\Models\Recap::where(function($q) {
                 $q->where('status', 'belum_dikonfirmasi')->orWhereNull('status');
-            })->whereNull('confirmed_at')->count();
-            $staffTerkonfirmasi = \App\Models\Recap::where('status', 'terkonfirmasi')->orWhereNotNull('confirmed_at')->count();
+            })->whereNull('confirmed_at')
+            ->whereHas('items', function($q) use ($registeredProductNames) {
+                $q->whereIn('material', $registeredProductNames);
+            })->count();
+            $staffTerkonfirmasi = $staffTotalRecap - $staffBelumKonfirmasi;
         @endphp
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90">
@@ -161,7 +165,7 @@
 
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider">Telah Dikonfirmasi</span>
+                    <span class="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider">Terverifikasi / Selesai</span>
                     <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
                         ✓
                     </div>
@@ -170,7 +174,7 @@
                     {{ $staffTerkonfirmasi }} <span class="text-xs font-semibold text-emerald-700">Selesai</span>
                 </p>
                 <p class="text-[11px] text-slate-500 mt-1 font-medium">
-                    Stok produk telah dipotong dari inventori
+                    Terkonfirmasi stok & terverifikasi otomatis
                 </p>
             </div>
         </div>
@@ -200,7 +204,7 @@
             </form>
 
             <div class="flex items-center gap-2 text-xs text-slate-500 font-medium w-full md:w-auto justify-end">
-                <span>Menampilkan <strong class="text-slate-800">{{ $recaps->total() }}</strong> rekapan biaya</span>
+                <span>Menampilkan <strong class="text-slate-800">{{ method_exists($recaps, 'total') ? $recaps->total() : $recaps->count() }}</strong> rekapan biaya</span>
                 @if(request('search'))
                     <span class="text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-md">(Filter Aktif)</span>
                 @endif
@@ -337,7 +341,15 @@
 
                             {{-- 7. Status Konfirmasi Gudang --}}
                             <td class="py-4 px-4 align-top text-center whitespace-nowrap">
-                                @if($recap->isConfirmed())
+                                @if($recap->isAutoVerified())
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-200" title="Rekapan hanya berisi selain produk terdaftar (upah/material umum)">
+                                        <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        Terverifikasi
+                                    </span>
+                                    <span class="block text-[9px] text-slate-400 font-medium mt-1">
+                                        Otomatis (Non-Stok)
+                                    </span>
+                                @elseif($recap->isConfirmed())
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
                                         <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         Terkonfirmasi
@@ -348,20 +360,21 @@
                                         </span>
                                     @endif
                                 @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        Belum Konfirmasi
-                                    </span>
-                                    @php
-                                        $hasRegistered = $recap->items->some(fn($it) => $it->isRegisteredProduct());
-                                    @endphp
-                                    @if($hasRegistered)
-                                        <span class="block text-[9px] text-blue-600 font-bold mt-1">
-                                            📦 Ada Produk Stok
+                                    @if($recap->hasInsufficientStock())
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-red-100 text-red-800 border border-red-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                            Belum Konfirmasi
+                                        </span>
+                                        <span class="block text-[9px] text-red-600 font-bold mt-1">
+                                            ⚠️ Stok Tidak Cukup
                                         </span>
                                     @else
-                                        <span class="block text-[9px] text-slate-400 font-medium mt-1">
-                                            Non-Stok
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Belum Konfirmasi
+                                        </span>
+                                        <span class="block text-[9px] text-blue-600 font-bold mt-1">
+                                            📦 Ada Produk Stok
                                         </span>
                                     @endif
                                 @endif

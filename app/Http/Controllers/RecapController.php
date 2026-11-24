@@ -16,6 +16,21 @@ class RecapController extends Controller
      */
     public function index(Request $request)
     {
+        // Auto-verifikasi rekapan yang hanya memuat selain produk terdaftar (jika ada data baru/belum tersinkron)
+        Recap::where(function ($q) {
+            $q->where('status', 'belum_dikonfirmasi')->orWhereNull('status');
+        })->whereNull('confirmed_at')
+        ->with('items')
+        ->get()
+        ->each(function ($r) {
+            if (!$r->hasRegisteredProducts()) {
+                $r->update([
+                    'status'       => 'terkonfirmasi',
+                    'confirmed_at' => $r->created_at ?? now(),
+                ]);
+            }
+        });
+
         $search = $request->input('search');
         $query = Recap::with(['offer', 'items']);
 
@@ -56,25 +71,45 @@ class RecapController extends Controller
         $recap = Recap::with(['items', 'offer', 'confirmer'])->findOrFail($id);
 
         // Ambil daftar produk terdaftar pada rekapan ini beserta info stoknya
+        $totalNeededByProduct = [];
+        foreach ($recap->items as $item) {
+            $product = Product::findVariant($item->material, $item->ukuran);
+            if ($product) {
+                $pid = $product->id;
+                $qty = (int) round((float) ($item->qty ?? 0));
+                $totalNeededByProduct[$pid] = ($totalNeededByProduct[$pid] ?? 0) + $qty;
+            }
+        }
+
         $registeredItems = [];
         $unregisteredItems = [];
+        $hasInsufficientStock = false;
 
         foreach ($recap->items as $item) {
             $product = Product::findVariant($item->material, $item->ukuran);
             if ($product) {
+                $qtyButuh = (int) round((float) ($item->qty ?? 0));
+                $stokSekarang = (int) $product->stok;
+                $totalDibutuhkan = $totalNeededByProduct[$product->id] ?? $qtyButuh;
+                $stokCukup = $stokSekarang >= $totalDibutuhkan;
+                if (!$stokCukup) {
+                    $hasInsufficientStock = true;
+                }
+
                 $registeredItems[] = [
-                    'item'          => $item,
-                    'product'       => $product,
-                    'stok_sekarang' => (int) $product->stok,
-                    'qty_butuh'     => (int) round((float) $item->qty),
-                    'stok_cukup'    => (int) $product->stok >= (int) round((float) $item->qty),
+                    'item'             => $item,
+                    'product'          => $product,
+                    'stok_sekarang'    => $stokSekarang,
+                    'qty_butuh'        => $qtyButuh,
+                    'total_dibutuhkan' => $totalDibutuhkan,
+                    'stok_cukup'       => $stokCukup,
                 ];
             } else {
                 $unregisteredItems[] = $item;
             }
         }
 
-        return view('recap.show', compact('recap', 'registeredItems', 'unregisteredItems'));
+        return view('recap.show', compact('recap', 'registeredItems', 'unregisteredItems', 'hasInsufficientStock'));
     }
 
     /**
@@ -95,34 +130,79 @@ class RecapController extends Controller
                 ->with('error', 'Rekapan proyek ini sudah pernah dikonfirmasi sebelumnya.');
         }
 
-        $deductedProducts = [];
+        // 1. Validasi kecukupan stok sebelum pemotongan (dengan agregasi per produk)
+        $aggregatedProducts = [];
+        foreach ($recap->items as $item) {
+            if (empty($item->material)) {
+                continue;
+            }
 
-        DB::transaction(function () use ($recap, &$deductedProducts) {
-            foreach ($recap->items as $item) {
-                if (empty($item->material)) {
-                    continue;
-                }
+            $qty = (int) round((float) ($item->qty ?? 0));
+            if ($qty <= 0) {
+                continue;
+            }
 
-                $qty = (int) round((float) ($item->qty ?? 0));
-                if ($qty <= 0) {
-                    continue;
-                }
-
-                $product = Product::findVariant($item->material, $item->ukuran);
-                if ($product) {
-                    $stokAwal = (int) $product->stok;
-                    $product->decrement('stok', $qty);
-                    $stokSisa = (int) $product->fresh()->stok;
-
+            $product = Product::findVariant($item->material, $item->ukuran);
+            if ($product) {
+                $pid = $product->id;
+                if (!isset($aggregatedProducts[$pid])) {
                     $ukuranTampil = $product->ukuran ?: ($item->ukuran ?: '-');
-                    $deductedProducts[] = [
-                        'nama'       => $product->nama_produk,
-                        'ukuran'     => $ukuranTampil,
-                        'qty'        => $qty,
-                        'stok_awal'  => $stokAwal,
-                        'stok_sisa'  => $stokSisa,
+                    $aggregatedProducts[$pid] = [
+                        'product'      => $product,
+                        'total_qty'    => 0,
+                        'ukuranTampil' => $ukuranTampil,
                     ];
                 }
+                $aggregatedProducts[$pid]['total_qty'] += $qty;
+            }
+        }
+
+        $insufficientProducts = [];
+        $productsToDeduct = [];
+
+        foreach ($aggregatedProducts as $pData) {
+            $product = $pData['product'];
+            $neededQty = $pData['total_qty'];
+            $stokSekarang = (int) $product->stok;
+            $ukText = ($pData['ukuranTampil'] && $pData['ukuranTampil'] !== '-') ? " ({$pData['ukuranTampil']})" : '';
+
+            if ($stokSekarang < $neededQty) {
+                $insufficientProducts[] = "• {$product->nama_produk}{$ukText}: Dibutuhkan {$neededQty}, Stok Tersedia hanya {$stokSekarang}";
+            } else {
+                $productsToDeduct[] = [
+                    'product'      => $product,
+                    'qty'          => $neededQty,
+                    'ukuranTampil' => $pData['ukuranTampil'],
+                ];
+            }
+        }
+
+        // Jika ada produk yang stoknya tidak cukup, TOLAK konfirmasi
+        if (!empty($insufficientProducts)) {
+            $errorMsg = "Konfirmasi gagal! Stok gudang tidak mencukupi untuk item berikut:\n"
+                . implode("\n", $insufficientProducts)
+                . "\nSilakan perbarui atau restock barang terlebih dahulu sebelum melakukan konfirmasi.";
+
+            return redirect()->route('recap.show', $id)->with('error', $errorMsg);
+        }
+
+        $deductedProducts = [];
+
+        DB::transaction(function () use ($recap, $productsToDeduct, &$deductedProducts) {
+            foreach ($productsToDeduct as $pData) {
+                $product = $pData['product'];
+                $qty = $pData['qty'];
+                $stokAwal = (int) $product->stok;
+                $product->decrement('stok', $qty);
+                $stokSisa = (int) $product->fresh()->stok;
+
+                $deductedProducts[] = [
+                    'nama'       => $product->nama_produk,
+                    'ukuran'     => $pData['ukuranTampil'],
+                    'qty'        => $qty,
+                    'stok_awal'  => $stokAwal,
+                    'stok_sisa'  => $stokSisa,
+                ];
             }
 
             $recap->update([
@@ -254,6 +334,15 @@ class RecapController extends Controller
             }
         }
 
+        // Jika rekapan hanya memuat selain produk terdaftar (non-stok), otomatis terverifikasi
+        $recap->load('items');
+        if (!$recap->hasRegisteredProducts()) {
+            $recap->update([
+                'status'       => 'terkonfirmasi',
+                'confirmed_at' => now(),
+            ]);
+        }
+
         return redirect()->route('recap.index')->with('success', 'Rekapan Berhasil Disimpan!');
     }
     /**
@@ -309,6 +398,15 @@ class RecapController extends Controller
                     ]);
                 }
             }
+        }
+
+        // Jika rekapan hanya memuat selain produk terdaftar (non-stok), otomatis terverifikasi
+        $recap->load('items');
+        if (!$recap->hasRegisteredProducts()) {
+            $recap->update([
+                'status'       => 'terkonfirmasi',
+                'confirmed_at' => $recap->confirmed_at ?? now(),
+            ]);
         }
 
         return redirect()->route('recap.index')->with('success', 'Rekapan berhasil diperbarui!');

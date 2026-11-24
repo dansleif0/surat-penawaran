@@ -34,10 +34,27 @@
         {{-- CARD STATUS KONFIRMASI GUDANG & NOTIFIKASI PRODUK TERDAFTAR --}}
         <div class="mb-6 bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden print:hidden">
             {{-- Header Status --}}
-            <div class="p-5 md:p-6 {{ $recap->isConfirmed() ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-b border-emerald-100' : 'bg-gradient-to-r from-amber-50 via-orange-50 to-white border-b border-amber-100' }}">
+            <div class="p-5 md:p-6 {{ $recap->isAutoVerified() ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-white border-b border-blue-100' : ($recap->isConfirmed() ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-b border-emerald-100' : 'bg-gradient-to-r from-amber-50 via-orange-50 to-white border-b border-amber-100') }}">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-3.5">
-                        @if($recap->isConfirmed())
+                        @if($recap->isAutoVerified())
+                            <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl shadow-md shadow-blue-600/20 flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-black uppercase tracking-wider text-blue-800">Status Rekapan:</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-600 text-white shadow-xs">
+                                        Terverifikasi Otomatis
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-600 mt-1 font-medium">
+                                    Rekapan ini hanya memuat pengeluaran selain produk terdaftar (seperti material umum atau upah), sehingga diverifikasi otomatis tanpa pengurangan stok gudang.
+                                </p>
+                            </div>
+                        @elseif($recap->isConfirmed())
                             <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-md shadow-emerald-600/20 flex-shrink-0">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
@@ -75,26 +92,45 @@
                         @endif
                     </div>
 
-                    {{-- Tombol Konfirmasi --}}
-                    @if(!$recap->isConfirmed())
-                        @if(Auth::check() && in_array(Auth::user()->role, ['staff_gudang', 'admin']))
-                            <form action="{{ route('recap.konfirmasi', $recap->id) }}" method="POST"
-                                  onsubmit="return confirm('Apakah Anda yakin ingin mengonfirmasi rekapan proyek ini?\n\n• Stok produk terdaftar akan otomatis dipotong sesuai kuantitas rekapan.\n• Status rekapan akan berubah menjadi \'Terkonfirmasi\'.')">
-                                @csrf
-                                <button type="submit" 
-                                        style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important;"
-                                        class="px-5 py-3 rounded-xl text-xs font-black text-white hover:brightness-110 active:scale-95 transition-all shadow-md shadow-emerald-700/20 flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <span>Konfirmasi & Potong Stok</span>
-                                </button>
-                            </form>
-                        @endif
-                    @else
+                    {{-- Tombol Konfirmasi / Badge Status --}}
+                    @if($recap->isAutoVerified())
+                        <div class="px-4 py-2 bg-blue-100/80 border border-blue-300 text-blue-800 rounded-xl text-xs font-bold flex items-center gap-2">
+                            <span>✓ Otomatis Terverifikasi (Non-Stok)</span>
+                        </div>
+                    @elseif($recap->isConfirmed())
                         <div class="px-4 py-2 bg-emerald-100/70 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
                             <span>✓ Stok Terpotong</span>
                         </div>
+                    @else
+                        @if($hasInsufficientStock)
+                            <div class="flex flex-col items-end gap-1">
+                                <button type="button" disabled
+                                        class="px-5 py-3 rounded-xl text-xs font-black text-slate-400 bg-slate-100 border border-slate-300 flex items-center gap-2 cursor-not-allowed opacity-90 shadow-none">
+                                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <span>Konfirmasi Dinonaktifkan (Stok Kurang)</span>
+                                </button>
+                                <span class="text-[10px] text-red-600 font-bold flex items-center gap-1">
+                                    ⚠️ Harap restock produk terlebih dahulu
+                                </span>
+                            </div>
+                        @else
+                            @if(Auth::check() && in_array(Auth::user()->role, ['staff_gudang', 'admin']))
+                                <form action="{{ route('recap.konfirmasi', $recap->id) }}" method="POST"
+                                      onsubmit="return confirm('Apakah Anda yakin ingin mengonfirmasi rekapan proyek ini?\n\n• Stok produk terdaftar akan otomatis dipotong sesuai kuantitas rekapan.\n• Status rekapan akan berubah menjadi \'Terkonfirmasi\'.')">
+                                    @csrf
+                                    <button type="submit" 
+                                            style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important;"
+                                            class="px-5 py-3 rounded-xl text-xs font-black text-white hover:brightness-110 active:scale-95 transition-all shadow-md shadow-emerald-700/20 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>Konfirmasi & Potong Stok</span>
+                                    </button>
+                                </form>
+                            @endif
+                        @endif
                     @endif
                 </div>
             </div>
@@ -114,9 +150,21 @@
                 </div>
 
                 @if(count($registeredItems) > 0)
-                    <p class="text-xs text-slate-500 mb-3 leading-relaxed">
-                        Item berikut merupakan produk yang telah terdaftar di sistem master data gudang. Hanya item ini yang akan memotong kuantitas stok inventori.
-                    </p>
+                    @if($hasInsufficientStock && !$recap->isConfirmed())
+                        <div class="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-800 text-xs">
+                            <span class="text-base flex-shrink-0">⚠️</span>
+                            <div>
+                                <p class="font-bold text-red-900">Perhatian: Stok Gudang Tidak Mencukupi!</p>
+                                <p class="mt-0.5 text-red-700 leading-relaxed">
+                                    Rekapan ini tidak dapat dikonfirmasi oleh Staff Gudang karena terdapat produk yang stoknya di bawah kuantitas kebutuhan proyek. Silakan lakukan penambahan / restock produk di master data terlebih dahulu.
+                                </p>
+                            </div>
+                        </div>
+                    @else
+                        <p class="text-xs text-slate-500 mb-3 leading-relaxed">
+                            Item berikut merupakan produk yang telah terdaftar di sistem master data gudang. Hanya item ini yang akan memotong kuantitas stok inventori.
+                        </p>
+                    @endif
 
                     <div class="overflow-x-auto rounded-xl border border-slate-200">
                         <table class="w-full text-xs text-left">
@@ -132,7 +180,7 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @foreach($registeredItems as $reg)
-                                    <tr class="hover:bg-slate-50/50">
+                                    <tr class="{{ !$reg['stok_cukup'] && !$recap->isConfirmed() ? 'bg-red-50/70 hover:bg-red-50' : 'hover:bg-slate-50/50' }}">
                                         <td class="py-2.5 px-3 font-bold text-slate-900">
                                             {{ $reg['product']->nama_produk }}
                                         </td>
@@ -141,6 +189,11 @@
                                         </td>
                                         <td class="py-2.5 px-3 text-center font-extrabold text-blue-700">
                                             {{ $reg['qty_butuh'] }}
+                                            @if(isset($reg['total_dibutuhkan']) && $reg['total_dibutuhkan'] > $reg['qty_butuh'])
+                                                <span class="block text-[10px] text-slate-500 font-normal">
+                                                    (Total rekapan: {{ $reg['total_dibutuhkan'] }})
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="py-2.5 px-3 text-center font-bold text-slate-700">
                                             {{ $reg['stok_sekarang'] }}
@@ -152,11 +205,11 @@
                                                 </span>
                                             @elseif($reg['stok_cukup'])
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                                    ✓ Cukup
+                                                    ✓ Cukup ({{ $reg['stok_sekarang'] }})
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
-                                                    ⚠️ Kurang
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 animate-pulse">
+                                                    ⚠️ Kurang (Sisa: {{ $reg['stok_sekarang'] }})
                                                 </span>
                                             @endif
                                         </td>
@@ -166,9 +219,13 @@
                                                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                     Telah Dipotong
                                                 </span>
+                                            @elseif(!$reg['stok_cukup'])
+                                                <span class="inline-flex items-center text-[10px] font-bold text-red-700 bg-red-100/70 px-2 py-0.5 rounded border border-red-200">
+                                                    Tertahan (Stok Kurang)
+                                                </span>
                                             @else
                                                 <span class="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                                    Menunggu Konfirmasi
+                                                    Siap Dikonfirmasi
                                                 </span>
                                             @endif
                                         </td>
